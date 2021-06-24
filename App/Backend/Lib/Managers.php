@@ -6,7 +6,6 @@ class Managers
 {
     protected $api = null;
     protected $dao = null;
-    // protected $managers = null;
     protected $managers = [];
 
     public function __construct($api, $dao)

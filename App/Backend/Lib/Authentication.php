@@ -3,24 +3,20 @@
 namespace Lib;
 
 use Firebase\JWT\JWT;
-use DevCoder\DotEnv;
 
-use \Entity\User;
 
-class Authentication
+class Authentication extends ApplicationComponent
 {
-    protected $httpRequest;
     protected $jwtDecoded;
     protected $model;
     protected $action;
-    protected $config;
 
-    public function __construct($httpRequest, $model, $action, $config)
+    public function __construct(Application $app, $model, $action)
     {
-        $this->httpRequest = $httpRequest;
+        parent::__construct($app);
+
         $this->model = $model;
         $this->action = $action;
-        $this->config = $config;
     }
 
 
@@ -34,7 +30,7 @@ class Authentication
         //---------access token----------//
         $iat = time();
         $accessExp = $iat + 5 * 60;
-        $accessExp = $iat + 15;
+        // $accessExp = $iat + 15;
 
         // $payload["accessIat"] = $accessIat;//when the to token was created
         // $payload["nbf"] = $exp;
@@ -51,16 +47,31 @@ class Authentication
         } else {
             $refreshExp = $iat + 60 * 60 * 24 * 30 * 6;
             $payload["exp"] = $refreshExp;
+            $payload["nbf"] = $accessExp - 60;
         }
 
         $refreshJWT = JWT::encode($payload, getenv('REFRESH_TOKEN_SECRET'), 'HS256');
 
 
-
         return  [
-            'accessToken' => ['name' => 'accessToken', 'value' => $accessJWT, 'expire' => $accessExp, 'httpOnly' => true],
-            'refreshToken' => ['name' => 'refreshToken', 'value' => $refreshJWT, 'expire' => $payload['exp'], 'httpOnly' => true],
-            'accessTokenExpDate' => ['name' => 'accessTokenExpDate', 'value' => $accessExp, 'expire' => $accessExp, 'httpOnly' => false],
+            'accessToken' => [
+                'name' => 'accessToken',
+                'value' => $accessJWT,
+                'expire' => $accessExp,
+                'httpOnly' => true
+            ],
+            'refreshToken' => [
+                'name' => 'refreshToken',
+                'value' => $refreshJWT,
+                'expire' => $payload['exp'],
+                'httpOnly' => true
+            ],
+            'accessTokenExpDate' => [
+                'name' => 'accessTokenExpDate',
+                'value' => $accessExp,
+                'expire' => $accessExp,
+                'httpOnly' => false
+            ],
             // "payload" => $payload,
             // "extra infos" => [
             //     "accessTokenExp" => date('Y/m/d H:i:s', $accessExp),
@@ -72,7 +83,7 @@ class Authentication
 
     public function readRefreshToken()
     {
-        $decoded = JWT::decode($this->httpRequest->getCookie('refreshToken'), getenv('REFRESH_TOKEN_SECRET'), array('HS256'));
+        $decoded = JWT::decode($this->app->httpRequest()->getCookie('refreshToken'), getenv('REFRESH_TOKEN_SECRET'), array('HS256'));
         $this->jwtDecoded = json_decode(json_encode($decoded), true);
         return  $this->jwtDecoded;
     }
@@ -80,7 +91,7 @@ class Authentication
 
     public function auth()
     {
-        $decoded = JWT::decode($this->httpRequest->getCookie('accessToken'), getenv('ACCESS_TOKEN_SECRET'), array('HS256'));
+        $decoded = JWT::decode($this->app->httpRequest()->getCookie('accessToken'), getenv('ACCESS_TOKEN_SECRET'), array('HS256'));
         $this->jwtDecoded = json_decode(json_encode($decoded), true);
         return  $this->jwtDecoded;
     }
@@ -88,14 +99,12 @@ class Authentication
     public function permission()
     {
 
-        $config = $this->config->get();
-
         $controller = $this->model . 'Controller';
         $method = 'execute' . ucfirst($this->action);
 
         $userRole = $this->jwtDecoded['role'];
-        if (isset($config->Backend->Authentication->permission->$controller->$method->roles)) {
-            $allowedRoles = $config->Backend->Authentication->permission->$controller->$method->roles;
+        if (isset($this->app->config()->get()->Backend->Authentication->permission->$controller->$method->roles)) {
+            $allowedRoles = $this->app->config()->get()->Backend->Authentication->permission->$controller->$method->roles;
 
             if (!in_array($userRole, $allowedRoles)) {
                 throw new \Exception("forbidden");
@@ -105,11 +114,11 @@ class Authentication
         // exemple : UserController->executeGet is restircted for the viwer
         // the viwer cann only get his own info form the the user table 
 
-        if (isset($config->Backend->Authentication->permission->$controller->$method->conditions->$userRole)) {
-            $conditions = $config->Backend->Authentication->permission->$controller->$method->conditions->$userRole;
+        if (isset($this->app->config()->get()->Backend->Authentication->permission->$controller->$method->conditions->$userRole)) {
+            $conditions = $this->app->config()->get()->Backend->Authentication->permission->$controller->$method->conditions->$userRole;
 
 
-            $allPostData = $this->httpRequest->allPostdata();
+            $allPostData = $this->app->httpRequest()->allPostdata();
             if (array_keys_exists($conditions, $allPostData)) {
 
                 foreach ($conditions as $condition) {
@@ -130,13 +139,11 @@ class Authentication
     public function needsPermission()
     {
 
-        $config = $this->config->get();
-
         $controller = $this->model . 'Controller';
         $method = 'execute' . ucfirst($this->action);
 
-        if (isset($config->Backend->Authentication->noPermission->$controller)) {
-            $allowedMethods = $config->Backend->Authentication->noPermission->$controller;
+        if (isset($this->app->config()->get()->Backend->Authentication->noPermission->$controller)) {
+            $allowedMethods = $this->app->config()->get()->Backend->Authentication->noPermission->$controller;
             return !in_array($method, $allowedMethods) ? true : false;
         } else {
             return true;

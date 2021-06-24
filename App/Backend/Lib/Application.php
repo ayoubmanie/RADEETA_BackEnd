@@ -9,40 +9,37 @@ abstract class Application
 {
     protected $httpRequest;
     protected $httpResponse;
-    protected $authorization;
+    protected $authentication;
     protected $config;
-    protected $dotEnv;
     protected $router;
+    protected $dotEnv = __DIR__ . '../../../.env';
 
     public function __construct()
     {
-        $this->httpRequest = new HTTPRequest;
-        $this->httpResponse = new HTTPResponse;
-        $this->config = new Config(__DIR__ . '../../../Config/config.json');
-        $this->router = new Router($this->httpRequest());
-        (new DotEnv(__DIR__ . '../../../.env'))->load();
+        $this->httpRequest = new HTTPRequest($this);
+        $this->httpResponse = new HTTPResponse($this);
+        $this->config = new Config;
+        $this->router = new Router($this);
+        (new DotEnv($this->dotEnv))->load();
     }
 
     public function getController()
     {
         //routing
         $route = $this->router->route();
-        $model = $route["model"];
-        $action = $route["action"];
+        $model = $route['model'];
+        $action = $route['action'];
 
 
         //authorization
-        $this->authentication = new Authentication($this->httpRequest(), $model, $action, $this->config);
-        $userController = new UserController($model, $action, $this->httpRequest(), $this->config, $this->authentication);
+        $this->authentication = new Authentication($this, $model, $action);
+        $userController = new UserController($this, $model, $action);
         $userController->executeAuthorization();
 
 
-        // //Authentication checking
-        // $this->authentication->isAllowed($model, $action, $this->httpRequest());
-
         // On instancie le contrôleur.
         $controllerClass = "\\Controller\\" . $model . 'Controller';
-        return new $controllerClass($model, $action, $this->httpRequest(), $this->config, $this->authentication);
+        return new $controllerClass($this, $model, $action);
 
         // try {
         //     return new $controllerClass($route["module"], $route["action"]);
@@ -67,13 +64,12 @@ abstract class Application
         return $this->httpResponse;
     }
 
-    // public function config()
-    // {
-    //     return $this->config;
-    // }
-
-    // public function user()
-    // {
-    //     return $this->user;
-    // }
+    public function config()
+    {
+        return $this->config;
+    }
+    public function authentication()
+    {
+        return $this->authentication;
+    }
 }

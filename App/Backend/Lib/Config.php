@@ -5,26 +5,21 @@ namespace Lib;
 class Config
 {
 
-    protected $configFileName = '';
-    protected $fileContent = '';
+    protected $file = __DIR__ . '../../../Config/config.json';
+    protected $content;
 
-    public function __construct($configFileName)
+
+    public function get(): object
     {
-        $this->configFileName = $configFileName;
-    }
-
-
-    public function get()
-    {
-        if ($this->fileContent == '') {
+        if ($this->content == null) {
             $this->openFile();
         }
-        return  $this->fileContent;
+        return  $this->content;
     }
 
     protected function openFile()
     {
-        $json = file_get_contents($this->configFileName);
-        $this->fileContent = json_decode($json);
+        $json = file_get_contents($this->file);
+        $this->content = json_decode($json);
     }
 }

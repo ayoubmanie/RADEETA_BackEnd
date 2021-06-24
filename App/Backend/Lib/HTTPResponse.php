@@ -2,7 +2,7 @@
 
 namespace Lib;
 
-class HTTPResponse
+class HTTPResponse extends ApplicationComponent
 {
     protected $response;
 
@@ -25,7 +25,7 @@ class HTTPResponse
         $this->send();
     }
 
-    public function setResponse($response)
+    public function setResponseBody($response)
     {
         $this->addHeader("Content-type: JSON");
 
@@ -44,12 +44,15 @@ class HTTPResponse
 
 
     // Changement par rapport à la fonction setcookie() : le dernier argument est par défaut à true
-    public function setCookie($name, $value = '', $httpOnly, $expire = 0, $path = '/', $domain = null, $secure = true)
+    public function setCookie($name, $value = '', $expire = 0, $httpOnly,  $path = '/', $domain = null, $secure = true)
     {
-        setcookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
+        //for the defference between client side and server side
+        $oneDay = 60 * 60 * 24;
+
+        setcookie($name, $value, $expire + $oneDay, $path, $domain, $secure, $httpOnly);
     }
 
-    public function setCookies(array $cookies)
+    public function setResponseCookies(array $cookies)
     {
 
         foreach ($cookies as $cookie) {
@@ -58,7 +61,7 @@ class HTTPResponse
             // // echo date('Y/m/d H:i:s', $cookie['expire']);
             // echo ' _____ ';
             // $cookie['expire'] = 1640006563;
-            $this->setCookie($cookie['name'], $cookie['value'], $cookie['httpOnly']);
+            $this->setCookie($cookie['name'], $cookie['value'], $cookie['expire'], $cookie['httpOnly']);
         }
     }
 }

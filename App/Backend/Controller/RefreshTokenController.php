@@ -16,12 +16,12 @@ class RefreshTokenController extends BackController
 
     public function executeGet()
     {
-        if ($this->HTTPMethod == 'GET') {
+        if ($this->httpMethod == 'GET') {
 
             $actionMethod = $this->action;
             $this->view = $this->managers->getManagerOf($this->model)->$actionMethod(($this->data)['id']);
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : GET.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
     }
 
@@ -34,7 +34,7 @@ class RefreshTokenController extends BackController
             'password' => $user['password'],
             'role' => $user['role'],
         ];
-        $this->tokens = $this->authentication->createTokens($payload);
+        $this->tokens = $this->app->authentication()->createTokens($payload);
 
         $this->executeAdd();
 
@@ -45,14 +45,14 @@ class RefreshTokenController extends BackController
 
     public function executeRefresh()
     {
-        if ($this->HTTPMethod == 'PATCH') {
+        if ($this->httpMethod == 'PATCH') {
 
             //check if refresh token exist in database with the id 
             if ($this->isValid()) {
 
-                $payload = $this->authentication->readRefreshToken();
+                $payload = $this->app->authentication()->readRefreshToken();
 
-                $this->tokens = $this->authentication->createTokens($payload, 'refresh');
+                $this->tokens = $this->app->authentication()->createTokens($payload, 'refresh');
 
                 $this->executeUpdate();
 
@@ -65,10 +65,10 @@ class RefreshTokenController extends BackController
 
                 //no need to suspend user, remaining time for the access token is short 
                 // //--------suspend user--------//
-                // $payload = $this->authentication->readRefreshToken();
+                // $payload = $this->app->authentication()->readRefreshToken();
                 // $id = $payload['id'];
 
-                // $UserController = new UserController($this->model, $this->action, $this->httpRequest(), $this->config, $this->authentication);
+                // $UserController = new UserController($this->model, $this->action, $this->httpRequest(), $this->config, $this->app->authentication());
                 // $UserController->executeSuspendUser($id);
 
                 // $this->view = $UserController->view();
@@ -76,7 +76,7 @@ class RefreshTokenController extends BackController
                 throw new \Exception("an attack has been occured, need to re-login");
             }
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : PATCH.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : PATCH.");
         }
     }
 
@@ -87,13 +87,19 @@ class RefreshTokenController extends BackController
         $this->data['newRT'] = $this->tokens['refreshToken']['value'];
         $this->data['expirationDate'] = date('Y-m-d H:i:s', $this->tokens['refreshToken']['expire']);
 
-        $object = new RefreshToken('add', $this->data, $this->config);
+        $object = new RefreshToken('add', $this->data, $this->app->config());
         $this->managers->getManagerOf('refreshToken')->add($object);
 
         $refreshTokenId =  $this->managers->getManagerOf('refreshToken')->getLastIdInserted();
-        // $this->authentication->createtokenZZZ();
+        // $this->app->authentication()->createtokenZZZ();
 
-        $this->tokens['refreshTokenId'] =  ["name" => "refreshTokenId", "value" => $refreshTokenId, "expire" => $this->tokens['refreshToken']['expire'], 'httpOnly' => true];
+
+        $this->tokens['refreshTokenId'] =  [
+            "name" => "refreshTokenId",
+            "value" => $refreshTokenId,
+            "expire" => $this->tokens['refreshToken']['expire'],
+            'httpOnly' => true
+        ];
     }
 
 
@@ -103,9 +109,9 @@ class RefreshTokenController extends BackController
 
         $this->data['id'] = $this->id();
         $this->data['newRT'] = $this->tokens['refreshToken']['value'];
-        $this->data['oldRT'] = $this->httpRequest->getCookie('refreshToken');
+        $this->data['oldRT'] = $this->app->httpRequest()->getCookie('refreshToken');
 
-        $object = new RefreshToken('update', $this->data, $this->config);
+        $object = new RefreshToken('update', $this->data, $this->app->config());
 
         $this->managers->getManagerOf('refreshToken')->update($object);
 
@@ -115,9 +121,9 @@ class RefreshTokenController extends BackController
 
     protected function isValid(): bool
     {
-        // print_r($this->authentication->readRefreshToken());
+        // print_r($this->app->authentication()->readRefreshToken());
 
-        $refreshToken = $this->httpRequest->getCookie('refreshToken');
+        $refreshToken = $this->app->httpRequest()->getCookie('refreshToken');
 
         $isValid = $this->managers->getManagerOf('refreshToken')->check($this->id(), $refreshToken);
 
@@ -127,7 +133,7 @@ class RefreshTokenController extends BackController
     protected function id()
     {
         if ($this->id == NULL) {
-            $this->id = $this->httpRequest->getCookie('refreshTokenId');
+            $this->id = $this->app->httpRequest()->getCookie('refreshTokenId');
         }
         return $this->id;
     }

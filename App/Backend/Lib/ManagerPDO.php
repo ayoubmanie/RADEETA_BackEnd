@@ -44,17 +44,9 @@ trait ManagerPDO
             $queryUpdateAttrs = $this->querryAttrs($attrs);
 
 
-            // This was used when the class had mutiple keys 
-            // $queryIds = "";
-            // foreach ($ids as $key => $value) {
-            //     $queryIds .= " $value = :$value";
-            //     if (array_key_last($ids) != $key)  $queryIds .= ' AND ';
-            // }
+
             $requete = "UPDATE $tableName SET $queryUpdateAttrs WHERE $id = :id";
-            //might be used ! (no)
-            // if (is_callable([$this, 'checkUpdate'])) {
-            //     $this->checkUpdate($requete);
-            // }
+
 
             $requete = $this->dao->prepare($requete);
             $requete = $this->bindAllAttrs($requete, $entity, $entity->updateAttrs());
@@ -80,7 +72,8 @@ trait ManagerPDO
 
     protected function tableName(Entity $entity)
     {
-        $className = array_values(explode("\\", get_class($entity))); //do not remove ! (to avoid a warning)
+        // DO NOT REMOVE!!! (to avoid a warning)
+        $className = array_values(explode("\\", get_class($entity)));
         return  end($className);
     }
 

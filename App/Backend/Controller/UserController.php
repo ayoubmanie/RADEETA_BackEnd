@@ -12,29 +12,29 @@ class UserController extends BackController
 
     public function executeGet()
     {
-        if ($this->HTTPMethod == 'GET') {
+        if ($this->httpMethod == 'GET') {
 
             $actionMethod = $this->action;
             $this->view = $this->managers->getManagerOf($this->model)->$actionMethod(($this->data)['id']);
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : GET.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
     }
 
     public function executeAuthorization()
     {
-        //no need to check for the HTTPMethode
-        if ($this->authentication->needsPermission()) {
+        //no need to check for the httpMethod
+        if ($this->app->authentication()->needsPermission()) {
 
-            $this->authentication->auth();
+            $this->app->authentication()->auth();
 
-            $this->authentication->permission();
+            $this->app->authentication()->permission();
         }
     }
 
     public function executeLogin()
     {
-        if ($this->HTTPMethod == 'POST') {
+        if ($this->httpMethod == 'POST') {
             // $testId = ($this->data)['testId'];
             // $password = ($this->data)['password'];
             $testId = 1;
@@ -43,17 +43,15 @@ class UserController extends BackController
 
             if ($user) {
                 //create tokens;
-                $RefreshTokenController = new RefreshTokenController($this->model, $this->action, $this->httpRequest(), $this->config, $this->authentication);
+                $RefreshTokenController = new RefreshTokenController($this->app, $this->model, $this->action);
                 $RefreshTokenController->executeGetNew($user);
 
                 $this->cookies = $RefreshTokenController->cookies();
-
-                // $this->view = $RefreshTokenController->view();
             } else {
                 throw new \Exception("wrong user, can not authentify");
             }
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : POST.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : POST.");
         }
     }
 
@@ -63,7 +61,7 @@ class UserController extends BackController
         $newData['id'] = $id;
         $newData['suspendu'] = '1';
 
-        $object = new User('update', $newData, $this->config);
+        $object = new User('update', $newData, $this->app->config());
         $this->managers->getManagerOf('user')->update($object);
 
         $this->view = 'user suspended';

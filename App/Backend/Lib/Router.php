@@ -2,24 +2,20 @@
 
 namespace Lib;
 
-class Router
+class Router extends ApplicationComponent
 {
-    protected $httpRequest;
-
-    public function __construct($httpRequest)
-    {
-
-        $this->httpRequest = $httpRequest;
-    }
 
     public  function route()
     {
-        $requestURI = $this->httpRequest->requestURI();
+        $requestURI = $this->app->httpRequest()->requestURI();
         $requestArray = explode('?', $requestURI);
         $requestArray = explode('/', $requestArray[0]);
         $requestArray = array_filter($requestArray);
         $requestArray = array_values($requestArray);
 
-        return ["model" => $requestArray[1], "action" => $requestArray[2]];
+        return [
+            'model' => $requestArray[1],
+            'action' => $requestArray[2]
+        ];
     }
 }

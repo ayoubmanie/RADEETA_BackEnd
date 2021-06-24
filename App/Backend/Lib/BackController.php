@@ -2,29 +2,26 @@
 
 namespace Lib;
 
-use InvalidArgumentException;
 
-class BackController
+class BackController extends ApplicationComponent
 {
     protected $model = '';
     protected $action = '';
+    protected $httpMethod = '';
+    protected $data = '';
     protected $managers = '';
-    protected $HTTPMethod = '';
-    protected $data;
     protected $view;
     protected array $cookies = [];
-    protected $config;
-    protected $authentication;
 
-    public function __construct($model, $action, $httpRequest, $config, $authentication)
+    public function __construct(Application $app, $model, $action)
     {
+
+        parent::__construct($app);
+
         $this->model = $model;
         $this->action = $action;
-        $this->HTTPMethod = $httpRequest->method();
-        $this->data = $httpRequest->allPostdata();
-        $this->httpRequest = $httpRequest;
-        $this->config = $config;
-        $this->authentication = $authentication;
+        $this->httpMethod = $app->httpRequest()->method();
+        $this->data = $app->httpRequest()->allPostdata();
 
         $this->managers = new Managers('PDO', PDOFactory::getMysqlConnexion());
     }
@@ -42,46 +39,46 @@ class BackController
 
     public function executeGet()
     {
-        if ($this->HTTPMethod == 'GET') {
+        if ($this->httpMethod == 'GET') {
 
             $actionMethod = $this->action;
             $this->view = $this->managers->getManagerOf($this->model)->$actionMethod(($this->data)['id']);
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : GET.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
     }
 
     public function executeGetList()
     {
-        if ($this->HTTPMethod == 'GET') {
+        if ($this->httpMethod == 'GET') {
             $actionMethod = $this->action;
             $this->view = $this->managers->getManagerOf($this->model)->$actionMethod();
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : GET.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
     }
 
     public function executeAdd()
     {
-        if ($this->HTTPMethod == 'POST') {
+        if ($this->httpMethod == 'POST') {
             $entity = '\\Entity\\' . $this->model;
             // print_r($this->data);
-            $Object = new $entity('add', $this->data, $this->config);
+            $Object = new $entity('add', $this->data, $this->app->config());
             $this->view = $this->managers->getManagerOf($this->model)->add($Object);
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : POST.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : POST.");
         }
     }
 
     public function executeUpdate()
     {
-        if ($this->HTTPMethod == 'PATCH') {
+        if ($this->httpMethod == 'PATCH') {
 
             $entity = '\\Entity\\' . $this->model;
-            $Object = new $entity('update', $this->data, $this->config);
+            $Object = new $entity('update', $this->data, $this->app->config);
             $this->view = $this->managers->getManagerOf($this->model)->update($Object);
         } else {
-            throw new \InvalidArgumentException("wrong HTTPMethod, try : PATCH.");
+            throw new \InvalidArgumentException("wrong httpMethod, try : PATCH.");
         }
     }
 
@@ -90,10 +87,6 @@ class BackController
         return $this->view;
     }
 
-    public function httpRequest()
-    {
-        return $this->httpRequest;
-    }
 
     public function cookies()
     {

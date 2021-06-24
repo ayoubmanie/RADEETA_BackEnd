@@ -25,18 +25,10 @@ abstract class Entity
 
 
                 $id  = $this->classId();
-                // if (!is_array($ids)) {
-                //     throw new \Exception("class id/ids must be an array");
-                // }
 
                 //check if there is an empty id 
                 $value = trim($id);
                 if (empty($value)) throw new \InvalidArgumentException("unknown class id");
-                // foreach ($ids as $key => $value) {
-                //     $value = trim($value);
-                //     if (empty($value))
-                //         throw new \InvalidArgumentException("the id is missing");
-                // }
 
 
                 //check if there is an attribute that is not updated from the user, like the dateModif ...
@@ -50,15 +42,10 @@ abstract class Entity
                 }
 
 
-                // if (!empty($ids) && array_keys_exists($ids, $donnees)) {
                 if (array_key_exists($id, $donnees)) {
 
                     $this->hydrate($donnees, $donnees, $action);
                 } else {
-                    // $idsString = "";
-                    // foreach ($ids as $id) {
-                    //     $idsString .= $id . ', ';
-                    // }
 
                     throw new \InvalidArgumentException("post data '" . $id . "' is missing,");
                 }
