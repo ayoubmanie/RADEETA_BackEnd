@@ -1,0 +1,43 @@
+{
+  "Backend": {
+    "Entity": {
+      "User": {
+        "role": ["Owner", "admin", "viewer"]
+      }
+    },
+    "Authentication": {
+      "noPermission": {
+        "UserController": ["executeLogin"],
+        "RefreshTokenController": ["executeRefresh"]
+      },
+      "permission": {
+        "TestController": {
+          "executeGet": {
+            "roles": ["Owner", "admin", "viewer"],
+            "conditions": {
+              "viewer": ["testId"]
+            }
+          },
+          "executeAdd": {
+            "roles": ["Owner", "admin"]
+          }
+        },
+        "UserController": {
+          "executeGet": {
+            "roles": ["Owner", "admin", "viewer"],
+            "conditions": {
+              "admin": ["id"]
+            }
+          },
+          "executeGetList": {
+            "roles": ["Owner", "admin"]
+          },
+          "executeAdd": {
+            "roles": ["Owner", "admin"]
+          }
+        }
+      }
+    }
+  },
+  "Frontend": {}
+}

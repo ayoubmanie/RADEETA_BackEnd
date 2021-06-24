@@ -1,0 +1,6 @@
+{
+    "require": {
+        "firebase/php-jwt": "^5.3",
+        "devcoder-xyz/php-dotenv": "^1.0"
+    }
+}
