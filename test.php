@@ -1,6 +1,7 @@
 <?php
 
 co('ayoub');
+echo 'test';
 
 function co($name, $value = '', $expire = 0, $path = null, $domain = null, $secure = true, $httpOnly = true)
 {
