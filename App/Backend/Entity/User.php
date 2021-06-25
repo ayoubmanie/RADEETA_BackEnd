@@ -58,7 +58,8 @@ class User extends Entity
         if (is_numeric($id) && !empty($id)) {
             $this->id = $id;
         } else {
-            $this->erreurs[] = self::ID_INVALIDE;
+            // $this->erreurs[] = self::ID_INVALIDE;
+            $this->erreurs[] = "invalid";
         }
     }
 
@@ -67,7 +68,8 @@ class User extends Entity
         if (is_numeric($testId) && !empty($testId)) {
             $this->testId = $testId;
         } else {
-            $this->erreurs['testId'] = self::TESTID_INVALIDE;
+            // $this->erreurs['testId'] = self::TESTID_INVALIDE;
+            $this->erreurs['testId'] = "invalid";
         }
     }
 
@@ -78,7 +80,8 @@ class User extends Entity
 
             $this->password = password_hash($password, PASSWORD_DEFAULT);
         } else {
-            $this->erreurs['password'] = self::PASSWORD_INVALIDE;
+            // $this->erreurs['password'] = self::PASSWORD_INVALIDE;
+            $this->erreurs['password'] = "invalid";
         }
     }
 
@@ -91,13 +94,14 @@ class User extends Entity
             $this->role = $role;
         } else {
 
-            $this->erreurs['role'] = self::ROLE_INVALIDE;
+            // $this->erreurs['role'] = self::ROLE_INVALIDE;
+            $this->erreurs['role'] = "invalid";
         }
     }
 
     public function setDateModif($dateModif)
     {
-        $this->dateModif = date("Y-m-d h:i:s");
+        $this->dateModif = date("Y-m-d H:i:s");
     }
 
     public function setSuspendu($suspendu)
@@ -106,7 +110,8 @@ class User extends Entity
         if (is_numeric($suspendu) && ($suspendu == 0 || $suspendu == 1)) {
             $this->suspendu = $suspendu;
         } else {
-            $this->erreurs['suspendu'] = self::SUSPENDU_INVALIDE;
+            // $this->erreurs['suspendu'] = self::SUSPENDU_INVALIDE;
+            $this->erreurs['suspendu'] = "invalid";
         }
     }
 

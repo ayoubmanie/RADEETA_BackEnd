@@ -21,7 +21,16 @@ class BackController extends ApplicationComponent
         $this->model = $model;
         $this->action = $action;
         $this->httpMethod = $app->httpRequest()->method();
-        $this->data = $app->httpRequest()->allPostdata();
+
+        // Solution for the get methods with one data block (one table)
+        // not many tables
+        $temp = $app->httpRequest()->allPostdata();
+        if (is_array($temp) && array_key_exists($this->model, $temp)) {
+            $this->data = $temp[$this->model];
+        } else {
+            //to review !!!!
+            $this->data = $app->httpRequest()->allPostdata();
+        }
 
         $this->managers = new Managers('PDO', PDOFactory::getMysqlConnexion());
     }
@@ -42,7 +51,7 @@ class BackController extends ApplicationComponent
         if ($this->httpMethod == 'GET') {
 
             $actionMethod = $this->action;
-            $this->view = $this->managers->getManagerOf($this->model)->$actionMethod(($this->data)['id']);
+            $this->view = $this->managers->getManagerOf($this->model)->$actionMethod($this->data, $this->model);
         } else {
             throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
@@ -63,15 +72,21 @@ class BackController extends ApplicationComponent
         if ($this->httpMethod == 'POST') {
 
             $entity = '\\Entity\\' . $this->model;
+
             if (!empty($this->data)) {
 
                 //check if data is an array or not
                 $this->formatJsonToArray();
-
                 foreach ($this->data as $value) {
                     $objects[] = new $entity('add', $value, $this->app->config());
                 }
-                $this->view = $this->managers->getManagerOf($this->model)->add($objects);
+
+                // print_r($objects);
+                // exit;
+
+                $this->managers->getManagerOf($this->model)->add($objects);
+                // exit('test');
+                $this->view = $this->managers->getManagerOf($this->model)->invalidEntities();
             } else {
                 throw new \InvalidArgumentException("empty post data, try : POST.");
             }
@@ -102,7 +117,8 @@ class BackController extends ApplicationComponent
                     $objects[] = new $entity('update', $value, $this->app->config());
                 }
 
-                $this->view = $this->managers->getManagerOf($this->model)->update($objects);
+                $this->managers->getManagerOf($this->model)->update($objects);
+                $this->view = $this->managers->getManagerOf($this->model)->invalidEntities();
             } else {
                 throw new \InvalidArgumentException("empty post data, try : POST.");
             }

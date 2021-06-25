@@ -88,7 +88,7 @@ class Test extends Entity
 
     public function setDateModif($dateModif)
     {
-        $this->dateModif = date("Y-m-d h:i:s");
+        $this->dateModif = date("Y-m-d H:i:s");
     }
 
 

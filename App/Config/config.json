@@ -15,7 +15,7 @@
           "executeGet": {
             "roles": ["Owner", "admin", "viewer"],
             "conditions": {
-              "viewer": ["testId"]
+              "admin": ["testId"]
             }
           },
           "executeAdd": {

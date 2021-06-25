@@ -13,9 +13,33 @@ class Router extends ApplicationComponent
         $requestArray = array_filter($requestArray);
         $requestArray = array_values($requestArray);
 
-        return [
-            'model' => $requestArray[1],
-            'action' => $requestArray[2]
-        ];
+
+
+        if (!array_key_exists(1, $requestArray)) {
+
+            throw new \Exception("no model is given");
+        } elseif ($requestArray[1] == 'add' || $requestArray[1] == 'update') {
+
+            $route['action'] = $requestArray[1];
+
+            $data = $this->app->httpRequest()->allPostdata();
+
+            if (empty($data)) throw new \Exception("no model is given for the '$requestArray[1]' action");
+
+            foreach ($data as $key => $value) {
+                $route['model'][] = $key;
+            }
+        } else {
+            $route['model'] = $requestArray[1];
+            if (!array_key_exists(2, $requestArray)) {
+                throw new \Exception("no action is given");
+            } else {
+                $route['action'] = $requestArray[2];
+            }
+        }
+
+
+
+        return $route;
     }
 }

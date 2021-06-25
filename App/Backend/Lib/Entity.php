@@ -4,6 +4,8 @@ namespace Lib;
 
 abstract class Entity
 {
+    protected $invalidEntity;
+    protected $rawPostData;
     protected $updateAttrs = [];
     protected $erreurs = [];
     protected $config;
@@ -22,6 +24,7 @@ abstract class Entity
         $this->config = $config;
 
         if (!empty($donnees)) {
+            $this->rawPostData = $donnees;
             if ($action == 'add') {
                 $this->hydrate(array_flip($this->addAttrs()), $donnees, $action);
             } elseif ($action == 'update') {
@@ -35,7 +38,7 @@ abstract class Entity
 
                 //check if there more post data than post id
                 if (empty(array_diff(array_flip($donnees), [$id]))) {
-                    throw new \Exception("no post data found to update", 1);
+                    // throw new \Exception("no post data found to update", 1);
                 }
 
 
@@ -49,14 +52,19 @@ abstract class Entity
                     }
                 }
 
+                // if (array_key_exists($id, $donnees)) {
 
-                if (array_key_exists($id, $donnees)) {
 
-                    $this->hydrate($donnees, $donnees, $action);
-                } else {
 
-                    throw new \InvalidArgumentException("post data '" . $id . "' is missing,");
-                }
+                $tempUpdateAttrs = $donnees;
+                $tempUpdateAttrs[$id] = null;
+
+                $this->hydrate($tempUpdateAttrs, $donnees, $action);
+
+                // } else {
+
+                //     throw new \InvalidArgumentException("post data '" . $id . "' is missing,");
+                // }
             }
         }
     }
@@ -70,7 +78,11 @@ abstract class Entity
         if (empty($this->erreurs)) {
             return true;
         } else {
-            throw new \RuntimeException(formErrorMsg($this));
+            $this->invalidEntity =  [
+                'postData' => $this->rawPostData,
+                'errorMessage' => $this->erreurs
+            ];
+            return false;
         }
     }
 
@@ -85,5 +97,10 @@ abstract class Entity
     public function updateAttrs()
     {
         return $this->updateAttrs;
+    }
+
+    public function invalidEntity()
+    {
+        return $this->invalidEntity;
     }
 }

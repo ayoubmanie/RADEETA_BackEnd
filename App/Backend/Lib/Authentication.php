@@ -7,7 +7,7 @@ use Firebase\JWT\JWT;
 
 class Authentication extends ApplicationComponent
 {
-    protected $jwtDecoded;
+    protected $jwtDecoded = null;
     protected $model;
     protected $action;
 
@@ -92,15 +92,16 @@ class Authentication extends ApplicationComponent
 
     public function auth()
     {
-        $decoded = JWT::decode($this->app->httpRequest()->getCookie('accessToken'), getenv('ACCESS_TOKEN_SECRET'), array('HS256'));
-        $this->jwtDecoded = json_decode(json_encode($decoded), true);
-        return  $this->jwtDecoded;
+        if ($this->jwtDecoded == null) {
+            $decoded = JWT::decode($this->app->httpRequest()->getCookie('accessToken'), getenv('ACCESS_TOKEN_SECRET'), array('HS256'));
+            $this->jwtDecoded = json_decode(json_encode($decoded), true);
+        } else return true;
     }
 
-    public function permission()
+    public function permission($model)
     {
 
-        $controller = $this->model . 'Controller';
+        $controller = $model . 'Controller';
         $method = 'execute' . ucfirst($this->action);
 
         $userRole = $this->jwtDecoded['role'];
@@ -118,8 +119,8 @@ class Authentication extends ApplicationComponent
         if (isset($this->app->config()->get()->Backend->Authentication->permission->$controller->$method->conditions->$userRole)) {
             $conditions = $this->app->config()->get()->Backend->Authentication->permission->$controller->$method->conditions->$userRole;
 
-
             $allPostData = $this->app->httpRequest()->allPostdata();
+
             if (array_keys_exists($conditions, $allPostData)) {
 
                 foreach ($conditions as $condition) {
@@ -139,15 +140,28 @@ class Authentication extends ApplicationComponent
 
     public function needsPermission()
     {
+        // If this the user doesn't have permission for one model in minimum 
+        // an error will be thrown
 
-        $controller = $this->model . 'Controller';
-        $method = 'execute' . ucfirst($this->action);
+        foreach ($this->model as $element) {
 
-        if (isset($this->app->config()->get()->Backend->Authentication->noPermission->$controller)) {
-            $allowedMethods = $this->app->config()->get()->Backend->Authentication->noPermission->$controller;
-            return !in_array($method, $allowedMethods) ? true : false;
-        } else {
-            return true;
+            $controller = ucfirst($element) . 'Controller';
+            $method = 'execute' . ucfirst($this->action);
+
+            if (isset($this->app->config()->get()->Backend->Authentication->noPermission->$controller)) {
+
+                $noPermissionMethods = $this->app->config()->get()->Backend->Authentication->noPermission->$controller;
+
+                // echo "$method : ";
+                // print_r($noPermissionMethods);
+                if (in_array($method, $noPermissionMethods)) {
+                    continue;
+                }
+            }
+            // echo "$element ...";
+            //if the user is not authentified, this command will throw an error
+            $this->auth();
+            $this->permission($element);
         }
     }
 }

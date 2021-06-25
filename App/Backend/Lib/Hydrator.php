@@ -17,8 +17,11 @@ trait Hydrator
             if (array_key_exists($key, $data)) {
                 $method = 'set' . ucfirst($key);
             } else {
-                throw new \InvalidArgumentException("Post data '" . $key . "' is missing");
+                $this->erreurs[$key] = "missing";
+                continue;
+                // throw new \InvalidArgumentException("Post data '" . $key . "' is missing");
             }
+
 
             if (is_callable([$this, $method])) {
                 $this->$method($data[$key]);

@@ -28,19 +28,23 @@ abstract class Application
         //routing
         $route = $this->router->route();
         $model = $route['model'];
+        if (!is_array($model)) $model = [$model];
         $action = $route['action'];
 
 
-        //authorization
+        //authentication
         $this->authentication = new Authentication($this, $model, $action);
-        $userController = new UserController($this, $model, $action);
-        $userController->executeAuthorization();
+        $this->authentication->needsPermission();
 
 
         // On instancie le contrôleur.
-        $controllerClass = "\\Controller\\" . $model . 'Controller';
-        return new $controllerClass($this, $model, $action);
+        foreach ($model as $element) {
+            $controllerClass = "\\Controller\\" . $element . 'Controller';
+            $controllers[$element] = new $controllerClass($this, $element, $action);
+        }
 
+
+        return $controllers;
         // try {
         //     return new $controllerClass($route["module"], $route["action"]);
         // } catch (\Throwable $e) {
