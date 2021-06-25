@@ -12,6 +12,9 @@ abstract class Entity
 
     abstract public function addAttrs(): array;
     abstract public function classId();
+
+    //attributes for the updated, they are not seted by the user
+    //this method is called by the entity constructor
     abstract public function autoUpdateAttrs(): array;
 
     public function __construct($action, array $donnees = [], $config)
@@ -29,6 +32,11 @@ abstract class Entity
                 //check if there is an empty id 
                 $value = trim($id);
                 if (empty($value)) throw new \InvalidArgumentException("unknown class id");
+
+                //check if there more post data than post id
+                if (empty(array_diff(array_flip($donnees), [$id]))) {
+                    throw new \Exception("no post data found to update", 1);
+                }
 
 
                 //check if there is an attribute that is not updated from the user, like the dateModif ...

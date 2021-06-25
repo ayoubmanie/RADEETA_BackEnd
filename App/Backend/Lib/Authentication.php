@@ -29,7 +29,8 @@ class Authentication extends ApplicationComponent
 
         //---------access token----------//
         $iat = time();
-        $accessExp = $iat + 5 * 60;
+
+        $accessExp = $iat + getenv('ACCESS_TOKEN_TIME');
         // $accessExp = $iat + 15;
 
         // $payload["accessIat"] = $accessIat;//when the to token was created
@@ -46,8 +47,8 @@ class Authentication extends ApplicationComponent
             $payload["exp"] = $payloadExp;
         } else {
             $refreshExp = $iat + 60 * 60 * 24 * 30 * 6;
-            $payload["exp"] = $refreshExp;
-            $payload["nbf"] = $accessExp - 60;
+            $payload["exp"] = getenv('REFRESH_TOKEN_TIME');
+            $payload["nbf"] = $accessExp - getenv('REFRESH_TOKEN_TIME_BEFORE_REFRESH');
         }
 
         $refreshJWT = JWT::encode($payload, getenv('REFRESH_TOKEN_SECRET'), 'HS256');

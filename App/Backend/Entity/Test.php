@@ -38,7 +38,8 @@ class Test extends Entity
         return  'id';
     }
 
-    //attributes for the apdated, they are not seted by the user
+    //attributes for the updated, they are not seted by the user
+    //this method is called by the entity constructor
     public function autoUpdateAttrs(): array
     {
         return [

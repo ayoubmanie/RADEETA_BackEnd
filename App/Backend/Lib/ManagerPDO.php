@@ -32,41 +32,107 @@ trait ManagerPDO
     //     }
     // }
 
-    public function update(Entity $entity)
+    public function update($entities)
     {
+        if (!is_array($entities)) $entities = [$entities];
 
-        if ($entity->isValid()) {
+        $refrenceEntity = $entities[0];
+        $tableName = $this->tableName($refrenceEntity);
+        $queryColumns = '';
 
-            $tableName = $this->tableName($entity);
-
-            $id  = $entity->classId();
-            $attrs = array_diff($entity->updateAttrs(), [$id]);
-            $queryUpdateAttrs = $this->querryAttrs($attrs);
-
+        $id  = $refrenceEntity->classId();
 
 
-            $requete = "UPDATE $tableName SET $queryUpdateAttrs WHERE $id = :id";
+
+        $allUpdateAttrs = [];
+        $ids = '';
+        foreach ($entities as $key => $entity) {
+
+            if ($entity->isValid()) {
+                //remove the id
+                $attrs = array_diff($entity->updateAttrs(), [$id]);
 
 
-            $requete = $this->dao->prepare($requete);
-            $requete = $this->bindAllAttrs($requete, $entity, $entity->updateAttrs());
-            $requete->execute();
+                foreach ($attrs as $attr) {
+                    $allUpdateAttrs[$attr][] = "WHEN id = :id$key THEN :$attr$key";
+                }
+
+                $ids .= ":id$key";
+
+                if (array_key_last($entities) != $key)  $ids .= ' , ';
+            }
         }
+
+        $queryUpdateAttrs = '';
+
+
+        foreach ($allUpdateAttrs as $attr => $values) {
+
+            $queryUpdateAttrs .= "$attr = ( CASE ";
+
+            foreach ($values as $value) {
+                $queryUpdateAttrs .= " $value ";
+            }
+
+            $queryUpdateAttrs .= "ELSE $attr END)";
+            if (array_key_last($allUpdateAttrs) != $attr)  $queryUpdateAttrs .= ' , ';
+        }
+
+
+
+        $requete = "UPDATE $tableName SET $queryUpdateAttrs WHERE $id in ($ids)";
+
+        //in order to bind a parametter (ex :id) multiole times 
+        $this->dao->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+
+        $requete = $this->dao->prepare($requete);
+
+        // bind 
+        foreach ($entities as $key => $entity) {
+            $requete = $this->bindAllAttrs($requete, $entity, $entity->updateAttrs(), $key);
+        }
+
+        // execute;
+        $requete->execute();
     }
 
 
-    public function add(Entity $entity)
+    public function add($entities)
     {
-        if ($entity->isValid()) {
-            $tableName = $this->tableName($entity);
-            $queryAddAttrs = $this->querryAttrs($entity->addAttrs());
+        if (!is_array($entities)) $entities = [$entities];
 
-            $requete = "INSERT INTO $tableName SET $queryAddAttrs";
+        $refrenceEntity = $entities[0];
+        $tableName = $this->tableName($refrenceEntity);
+        $queryColumns = '';
 
-            $requete = $this->dao->prepare($requete);
-            $requete = $this->bindAllAttrs($requete, $entity, $entity->addAttrs());
-            $requete->execute();
+        // $queryColumns
+        foreach ($refrenceEntity->addAttrs() as $attr => $value) {
+            $queryColumns .= $value;
+            if (array_key_last($refrenceEntity->addAttrs()) != $attr)  $queryColumns .= ', ';
         }
+
+        // $queryAddAttrs
+        $queryAddAttrs = '';
+        foreach ($entities as $key => $entity) {
+            if ($entity->isValid()) {
+                $queryAddAttrs .= $this->querryAttrsAdd($refrenceEntity->addAttrs(), $key);
+            }
+            if (array_key_last($entities) != $key)  $queryAddAttrs .= ', ';
+        }
+
+        // query
+        $requete = "INSERT INTO $tableName ($queryColumns) VALUES $queryAddAttrs";
+
+
+        // prepare
+        $requete = $this->dao->prepare($requete);
+
+        // bind 
+        foreach ($entities as $key => $entity) {
+            $requete = $this->bindAllAttrs($requete, $entity, $refrenceEntity->addAttrs(), $key);
+        }
+        // execute
+        $requete->execute();
     }
 
 
@@ -77,29 +143,30 @@ trait ManagerPDO
         return  end($className);
     }
 
-    protected function querryAttrs($attrs)
+    protected function querryAttrsAdd($attrs, $neededkey)
     {
         $queryAttrs = '';
-        foreach ($attrs as $key => $value) {
-            $queryAttrs .= $value . ' = :' . $value . ' ';
+        foreach ($attrs as $key => $attr) {
+            $queryAttrs .= ' :' . $attr . $neededkey . ' ';
             if (array_key_last($attrs) != $key)  $queryAttrs .= ', ';
         }
-        return $queryAttrs;
+        return "($queryAttrs)";
     }
 
 
-    protected function bindAllAttrs($requete, $entity, $attrs)
+    protected function bindAllAttrs($requete, $entity, $attrs, $key)
     {
         foreach ($attrs as $attr) {
             $type = gettype($entity->$attr());
 
             if ($type == 'integer') {
-                $requete->bindValue(":$attr", $entity->$attr(), \PDO::PARAM_INT);
+                $requete->bindValue(":" . $attr . $key, $entity->$attr(), \PDO::PARAM_INT);
             } elseif ($type == 'string') {
-                $requete->bindValue(":$attr", $entity->$attr(), \PDO::PARAM_STR);
+                $requete->bindValue(":" . $attr . $key, $entity->$attr(), \PDO::PARAM_STR);
             } else {
                 throw new \InvalidArgumentException("attribute type not specified in the class : '" . get_class($this->entity)) . "'";
             }
+            // echo $attr . $key . ' : ' . $entity->$attr() . '__';
         }
         return $requete;
     }

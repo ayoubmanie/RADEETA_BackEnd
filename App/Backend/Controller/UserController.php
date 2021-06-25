@@ -23,6 +23,7 @@ class UserController extends BackController
 
     public function executeAuthorization()
     {
+        return true;
         //no need to check for the httpMethod
         if ($this->app->authentication()->needsPermission()) {
 

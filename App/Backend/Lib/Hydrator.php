@@ -10,6 +10,9 @@ trait Hydrator
 
         foreach ($entity as $key => $value) {
 
+            if ($action == 'update') {
+                $this->updateAttrs = array_keys($entity);
+            }
 
             if (array_key_exists($key, $data)) {
                 $method = 'set' . ucfirst($key);

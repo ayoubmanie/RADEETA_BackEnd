@@ -61,13 +61,31 @@ class BackController extends ApplicationComponent
     public function executeAdd()
     {
         if ($this->httpMethod == 'POST') {
+
             $entity = '\\Entity\\' . $this->model;
-            // print_r($this->data);
-            $Object = new $entity('add', $this->data, $this->app->config());
-            $this->view = $this->managers->getManagerOf($this->model)->add($Object);
+            if (!empty($this->data)) {
+
+                //check if data is an array or not
+                $this->formatJsonToArray();
+
+                foreach ($this->data as $value) {
+                    $objects[] = new $entity('add', $value, $this->app->config());
+                }
+                $this->view = $this->managers->getManagerOf($this->model)->add($objects);
+            } else {
+                throw new \InvalidArgumentException("empty post data, try : POST.");
+            }
         } else {
             throw new \InvalidArgumentException("wrong httpMethod, try : POST.");
         }
+    }
+
+    protected function formatJsonToArray()
+    {
+        //check if data is an array or not
+        $tempTest = json_encode($this->data);
+        $tempTest = json_decode($tempTest);
+        if (!is_array($tempTest)) $this->data = [$this->data];
     }
 
     public function executeUpdate()
@@ -75,8 +93,19 @@ class BackController extends ApplicationComponent
         if ($this->httpMethod == 'PATCH') {
 
             $entity = '\\Entity\\' . $this->model;
-            $Object = new $entity('update', $this->data, $this->app->config);
-            $this->view = $this->managers->getManagerOf($this->model)->update($Object);
+            if (!empty($this->data)) {
+
+                //check if data is an array or not
+                $this->formatJsonToArray();
+
+                foreach ($this->data as $value) {
+                    $objects[] = new $entity('update', $value, $this->app->config());
+                }
+
+                $this->view = $this->managers->getManagerOf($this->model)->update($objects);
+            } else {
+                throw new \InvalidArgumentException("empty post data, try : POST.");
+            }
         } else {
             throw new \InvalidArgumentException("wrong httpMethod, try : PATCH.");
         }
