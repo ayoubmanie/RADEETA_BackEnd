@@ -25,6 +25,15 @@ class Service extends Entity
         ];
     }
 
+    //attributes for the get method in the exempleManager
+    public function  searchKeys(): array
+    {
+        return  [
+            'id',
+            'nom'
+        ];
+    }
+
     //attribute for the update method in the exempleManager , WHERE id
     public function classId()
     {

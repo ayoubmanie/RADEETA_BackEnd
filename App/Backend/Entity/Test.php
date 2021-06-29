@@ -7,11 +7,11 @@ use Throwable;
 
 class Test extends Entity
 {
-    protected int $id;
-    protected string $nom;
-    protected string $prenom;
-    protected string $dateNaissance;
-    protected string $dateModif; //datemodif is only mentionned here to let the dev know that this this table has this column
+    protected int $id = 0;
+    protected string $nom = '';
+    protected string $prenom = '';
+    protected string $dateNaissance = '';
+    protected string $dateModif = ''; //datemodif is only mentionned here to let the dev know that this this table has this column
 
     const ID_INVALIDE = 1;
     const NOM_INVALIDE = 2;
@@ -31,6 +31,17 @@ class Test extends Entity
         ];
     }
 
+    //attributes for the get method in the exempleManager
+    public function  searchKeys(): array
+    {
+        return  [
+            'id',
+            'nom',
+            'prenom',
+            'dateNaissance',
+            'dateModif',
+        ];
+    }
 
     //attribute for the update method in the exempleManager , WHERE id
     public function classId()

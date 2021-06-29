@@ -33,8 +33,8 @@ abstract class Application
 
 
         //authentication
-        $this->authentication = new Authentication($this, $model, $action);
-        $this->authentication->needsPermission();
+        // $this->authentication = new Authentication($this, $model, $action);
+        // $this->authentication->needsPermission();
 
 
         // On instancie le contrôleur.

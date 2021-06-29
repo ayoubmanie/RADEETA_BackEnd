@@ -5,6 +5,12 @@
         "role": ["Owner", "admin", "viewer"]
       }
     },
+    "ManagerPDO": {
+      "search": {
+        "operators": ["=", "!=", "<>", "<", ">", "<>", "<=", ">=", "LIKE"],
+        "defaultOperator": "="
+      }
+    },
     "Authentication": {
       "noPermission": {
         "UserController": ["executeLogin"],

@@ -29,6 +29,7 @@ class HTTPResponse extends ApplicationComponent
     {
         $this->addHeader("Content-type: JSON");
 
+        // $this->response = json_encode($response, JSON_FORCE_OBJECT);
         $this->response = json_encode($response, JSON_PRETTY_PRINT);
     }
 
@@ -39,6 +40,7 @@ class HTTPResponse extends ApplicationComponent
         // (bien que je suis sûr que les noms choisis sont assez explicites !).
         // var_dump($this->response);
         // exit;
+
         exit($this->response);
     }
 

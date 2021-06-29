@@ -8,6 +8,7 @@ trait ManagerPDO
 {
 
     protected $invalidEntities = [];
+    protected $validEntitiesResult = [];
     // public function update(Entity $entity)
     // {
 
@@ -64,7 +65,7 @@ trait ManagerPDO
                 if (array_key_last($entities) != $key)  $ids .= ' , ';
                 $finalEntities[$key] = $entity;
             } else {
-                $this->invalidEntities[] = $entity->invalidEntity();
+                $this->invalidEntities[$key] = $entity->invalidEntity();
             }
         }
 
@@ -131,7 +132,7 @@ trait ManagerPDO
                 if (array_key_last($entities) != $key)  $queryAddAttrs .= ', ';
                 $finalEntities[$key] = $entity;
             } else {
-                $this->invalidEntities[] = $entity->invalidEntity();
+                $this->invalidEntities[$key] = $entity->invalidEntity();
             }
         }
 
@@ -173,9 +174,51 @@ trait ManagerPDO
     }
 
 
-    protected function bindAllAttrs($requete, $entity, $attrs, $key)
+    protected function querryAttrsGet($attrs, $neededkey)
     {
+        $queryAttrs = '';
+        // print_r($attrs);
+        // exit;
+        foreach ($attrs as $key => $attr) {
+
+            foreach ($attr as $keyy => $v) {
+                $operator = $v["operator"];
+
+                foreach ($v["values"] as $k => $value) {
+                    $queryAttrs .= " $key $operator :$key$neededkey$keyy$k ";
+                    if (array_key_last($v["values"]) != $k)  $queryAttrs .= ' AND ';
+                }
+                if (array_key_last($attr) != $keyy)  $queryAttrs .= ' AND ';
+            }
+
+            if (array_key_last($attrs) != $key)  $queryAttrs .= ' AND ';
+        }
+
+
+        return "($queryAttrs)";
+    }
+
+    // protected function querryAttrsGet($attrs, $neededkey)
+    // {
+    //     $queryAttrs = '';
+    //     $queryEntityKey = '';
+
+    //     foreach ($attrs as $key => $attr) {
+    //         $queryAttrs .= "$attr = :$attr$neededkey";
+    //         if (array_key_last($attrs) != $key)  $queryAttrs .= ' AND ';
+    //     }
+    //     return [
+    //         "queryWHERE" => "($queryAttrs)",
+    //         "queryCASE" => " WHEN ($queryAttrs) THEN $neededkey "
+    //     ];
+    // }
+
+
+    protected function bindAllAttrs($requete, $entity, $attrs, $key = '')
+    {
+
         foreach ($attrs as $attr) {
+            // exit;
             $type = gettype($entity->$attr());
 
             if ($type == 'integer') {
@@ -190,33 +233,238 @@ trait ManagerPDO
         return $requete;
     }
 
-    public function invalidEntities()
+    protected function bindAllGetAttrs($requete, $entity, $attrs, $key = '')
     {
-        return $this->invalidEntities;
+
+        foreach ($attrs as $attr => $elements) {
+            // exit;
+            $type = gettype($entity->$attr());
+
+            foreach ($elements as $k => $e) {
+
+                foreach ($e["values"] as $keyy => $value) {
+
+                    if ($type == 'integer') {
+                        $requete->bindValue(":$attr$key$k$keyy", $value, \PDO::PARAM_INT);
+                    } elseif ($type == 'string') {
+                        $requete->bindValue(":$attr$key$k$keyy", $value, \PDO::PARAM_STR);
+                    } else {
+                        throw new \InvalidArgumentException("attribute type not specified in the class : '" . get_class($this->entity)) . "'";
+                    }
+                }
+            }
+        }
+
+        return $requete;
     }
 
-
-    public function get(array $searchData, $tablename)
+    public function get($entities)
     {
 
-        $whereAttrs = '';
-        foreach ($searchData as $key => $value) {
 
-            $whereAttrs .= "$key = :$key";
-            if (array_key_last($searchData) != $key)  $whereAttrs .= ' AND ';
+        if (!is_array($entities)) $entities = [$entities];
+
+        foreach ($entities as $key => $entity) {
+            $refrenceEntity = $entities[$key];
+        }
+        $tableName = $this->tableName($refrenceEntity);
+
+
+        // $queryAddAttrs
+        $queryConditions = '';
+        $queryEntityKey = '';
+        $finalEntities = [];
+        $requete = [];
+
+
+        // $allGetattrs = [];
+
+
+        foreach ($entities as $key => $entity) {
+
+            // print_r($entity);
+            // continue;
+            if ($entity->isValid()) {
+
+                $queryConditions =  $this->querryAttrsGet($entity->getAttrs(), $key);
+
+                $requete[] = "(SELECT *, '$key' as entity  FROM $tableName WHERE $queryConditions)";
+                // foreach ($entity->getAttrs() as $attr) {
+                //     $allGetattrs[$attr] = null;
+                // }
+                // if (array_key_last($entities) != $key)  $requete .= ' UNION ';
+                $finalEntities[$key] = $entity;
+            } else {
+                $this->invalidEntities[$key] = $entity->invalidEntity();
+            }
         }
 
-        $requete = $this->dao->prepare('SELECT $tablename FROM test WHERE $whereAttrs');
+        // print_r($this->invalidEntities);
+        // exit;
+        $requete = implode(" UNION ", $requete);
 
-        $requete = $this->bindAllAttrs($requete, $entity, $refrenceEntity->addAttrs(), $key);
+        if ($requete != '') {
+            // query
+            // $requete = "SELECT *, CASE $queryEntityKey END AS entity FROM $tableName WHERE $queryConditions";
 
-        $requete->execute();
+            // exit;
+            // echo $requete;
+            // exit;
 
-        // $requete->setFetchMode(\PDO::FETCH_CLASS | \PDO::FETCH_PROPS_LATE, '\Entity\Test');
-        if ($test = $requete->fetch()) {
-            return  $test;
+            $this->dao->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+
+            // prepare
+            $requete = $this->dao->prepare($requete);
+
+            // bind 
+
+            foreach ($finalEntities as $key => $entity) {
+
+                $requete = $this->bindAllGetAttrs($requete, $entity, $entity->getAttrs(), $key);
+            }
+
+            // execute
+            $requete->execute();
+            // var_dump($result = $requete->fetchAll());
+            // print_r($result);
+            // exit;
+            // $this->validEntitiesResult[$column][] = null;
+            if ($result = $requete->fetchAll()) {
+                // print_r($result);
+                // exit;
+                //                 // echo "$key - ";
+                foreach ($result as $row) {
+                    $column = $row["entity"];
+                    // echo "$column - ";
+                    unset($row["entity"]);
+                    $this->validEntitiesResult[$column][] = $row;
+                }
+            }
         }
+    }
+    // public function get($entities)
+    // {
 
-        return null;
+    //     if (!is_array($entities)) $entities = [$entities];
+
+    //     $refrenceEntity = $entities[0];
+    //     $tableName = $this->tableName($refrenceEntity);
+    //     $queryConsitions = '';
+
+
+    //     // $queryAddAttrs
+    //     $queryConditions = '';
+    //     $queryEntityKey = '';
+    //     $finalEntities = [];
+
+    //     // $allGetattrs = [];
+    //     foreach ($entities as $key => $entity) {
+
+    //         // print_r($entity);
+    //         // continue;
+    //         if ($entity->isValid()) {
+    //             $temp = $this->querryAttrsGet($entity->getAttrs(), $key);
+    //             $queryConditions .= $temp["queryWHERE"];
+    //             $queryEntityKey .=  $temp["queryCASE"];
+
+    //             // foreach ($entity->getAttrs() as $attr) {
+    //             //     $allGetattrs[$attr] = null;
+    //             // }
+    //             if (array_key_last($entities) != $key)  $queryConditions .= ' OR ';
+    //             $finalEntities[$key] = $entity;
+    //         } else {
+    //             $this->invalidEntities[$key] = $entity->invalidEntity();
+    //         }
+    //     }
+
+    //     // print_r($this->invalidEntities);
+    //     // exit;
+    //     if ($queryConditions != '') {
+    //         // query
+    //         $requete = "SELECT *, CASE $queryEntityKey END AS entity FROM $tableName WHERE $queryConditions";
+
+    //         // exit;
+    //         // echo $requete;
+    //         // exit;
+    //         $this->dao->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+
+    //         // prepare
+    //         $requete = $this->dao->prepare($requete);
+
+    //         // bind 
+
+    //         foreach ($finalEntities as $key => $entity) {
+    //             $requete = $this->bindAllAttrs($requete, $entity, $entity->getAttrs(), $key);
+    //         }
+
+    //         // execute
+    //         $requete->execute();
+
+    //         if ($result = $requete->fetchAll()) {
+    //             //                 // echo "$key - ";
+    //             foreach ($result as $row) {
+    //                 $column = $row["entity"];
+    //                 unset($row["entity"]);
+    //                 $this->validEntitiesResult[$column][] = $row;
+    //             }
+    //         }
+    //     }
+    // }
+
+    // public function get($entities)
+    // {
+
+    //     if (!is_array($entities)) $entities = [$entities];
+
+    //     $refrenceEntity = $entities[0];
+    //     $tableName = $this->tableName($refrenceEntity);
+    //     $queryColumns = '';
+
+    //     foreach ($entities as $key => $entity) {
+    //         if ($entity->isValid()) {
+
+
+    //             $whereAttrs = '';
+
+
+    //             foreach ($entity->getAttrs() as $keyy => $attr) {
+
+    //                 $whereAttrs .= "$attr = :$attr$key";
+    //                 if (array_key_last($entity->getAttrs()) != $keyy)  $whereAttrs .= ' AND ';
+    //             }
+
+    //             // $rowCount = $entity->rowCount();
+    //             // $offset = $entity->offset();
+
+
+    //             // $requete  = "SELECT * FROM $tableName WHERE $whereAttrs LIMIT $rowCount OFFSET $offset";
+    //             $requete  = "SELECT * FROM $tableName WHERE $whereAttrs ";
+
+    //             $requete = $this->dao->prepare($requete);
+
+    //             // the $key here could be set to null
+    //             $requete = $this->bindAllAttrs($requete, $entity, $entity->getAttrs());
+
+    //             $requete->execute();
+
+    //             if ($result = $requete->fetchAll()) {
+    //                 // echo "$key - ";
+
+    //                 $this->validEntitiesResult[$key] = $result;
+    //             }
+    //         } else {
+    //             $this->invalidEntities[$key] = $entity->invalidEntity();
+    //         }
+    //     }
+    // }
+
+
+    public function response()
+    {
+        //add the http status if there is an invalidEntities!!!
+
+        //don't use array_merge , it causes reindexing
+        $array = $this->invalidEntities + $this->validEntitiesResult;
+        return (object)$array;
     }
 }

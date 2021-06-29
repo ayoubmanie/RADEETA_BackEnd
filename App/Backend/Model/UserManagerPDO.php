@@ -11,19 +11,19 @@ class UserManagerPDO extends UserManager
     use ManagerPDO;
 
 
-    public function get($testId)
-    {
-        $requete = $this->dao->prepare('SELECT * FROM user WHERE testId = :testId');
-        $requete->bindValue(':testId', (int) $testId, \PDO::PARAM_INT);
-        $requete->execute();
+    // public function get($testId)
+    // {
+    //     $requete = $this->dao->prepare('SELECT * FROM user WHERE testId = :testId');
+    //     $requete->bindValue(':testId', (int) $testId, \PDO::PARAM_INT);
+    //     $requete->execute();
 
-        // $requete->setFetchMode(\PDO::FETCH_CLASS | \PDO::FETCH_PROPS_LATE, '\Entity\Test');
-        if ($test = $requete->fetch()) {
-            return  $test;
-        }
+    //     // $requete->setFetchMode(\PDO::FETCH_CLASS | \PDO::FETCH_PROPS_LATE, '\Entity\Test');
+    //     if ($test = $requete->fetch()) {
+    //         return  $test;
+    //     }
 
-        return null;
-    }
+    //     return null;
+    // }
 
     public function getList(): array
     {

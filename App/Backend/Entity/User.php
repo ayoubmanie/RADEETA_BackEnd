@@ -7,12 +7,12 @@ use Throwable;
 
 class User extends Entity
 {
-    protected int $id;
-    protected int $testId;
-    protected string $password;
-    protected string $role;
-    protected string $dateModif; //datemodif is only mentionned here to let the dev know that this this table has this column
-    protected int $suspendu;
+    protected int $id = 0;
+    protected int $testId = 0;
+    protected string $password = '';
+    protected string $role = '';
+    protected string $dateModif = ''; //datemodif is only mentionned here to let the dev know that this this table has this column
+    protected int $suspendu = 0;
 
     const ID_INVALIDE = 1;
     const TESTID_INVALIDE = 2;
@@ -30,6 +30,19 @@ class User extends Entity
             'testId',
             'password',
             'role',
+            'suspendu'
+        ];
+    }
+
+    //attributes for the get method in the exempleManager
+    public function  searchKeys(): array
+    {
+        return  [
+            'id',
+            'testId',
+            'password',
+            'role',
+            'dateModif',
             'suspendu'
         ];
     }

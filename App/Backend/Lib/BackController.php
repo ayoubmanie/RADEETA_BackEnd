@@ -50,8 +50,30 @@ class BackController extends ApplicationComponent
     {
         if ($this->httpMethod == 'GET') {
 
-            $actionMethod = $this->action;
-            $this->view = $this->managers->getManagerOf($this->model)->$actionMethod($this->data, $this->model);
+            $entity = '\\Entity\\' . $this->model;
+
+            if (!empty($this->data)) {
+
+                //check if data is an array or not
+                // $this->data = formatJsonToArray($this->data);
+
+
+                foreach ($this->data as $entitynumber => $value) {
+                    $objects[$entitynumber] = new $entity('get', $value, $this->app->config());
+                }
+
+
+                $this->managers->getManagerOf($this->model)->get($objects);
+
+
+                // exit('test');
+                $this->view = $this->managers->getManagerOf($this->model)->response();
+
+                // print_r($this->view);
+                // exit;
+            } else {
+                throw new \InvalidArgumentException("empty post data, try : GET.");
+            }
         } else {
             throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
@@ -59,6 +81,9 @@ class BackController extends ApplicationComponent
 
     public function executeGetList()
     {
+
+
+
         if ($this->httpMethod == 'GET') {
             $actionMethod = $this->action;
             $this->view = $this->managers->getManagerOf($this->model)->$actionMethod();
@@ -76,7 +101,7 @@ class BackController extends ApplicationComponent
             if (!empty($this->data)) {
 
                 //check if data is an array or not
-                $this->formatJsonToArray();
+                $this->data = formatJsonToArray($this->data);
                 foreach ($this->data as $value) {
                     $objects[] = new $entity('add', $value, $this->app->config());
                 }
@@ -86,7 +111,7 @@ class BackController extends ApplicationComponent
 
                 $this->managers->getManagerOf($this->model)->add($objects);
                 // exit('test');
-                $this->view = $this->managers->getManagerOf($this->model)->invalidEntities();
+                $this->view = $this->managers->getManagerOf($this->model)->response();
             } else {
                 throw new \InvalidArgumentException("empty post data, try : POST.");
             }
@@ -95,13 +120,6 @@ class BackController extends ApplicationComponent
         }
     }
 
-    protected function formatJsonToArray()
-    {
-        //check if data is an array or not
-        $tempTest = json_encode($this->data);
-        $tempTest = json_decode($tempTest);
-        if (!is_array($tempTest)) $this->data = [$this->data];
-    }
 
     public function executeUpdate()
     {
@@ -111,14 +129,14 @@ class BackController extends ApplicationComponent
             if (!empty($this->data)) {
 
                 //check if data is an array or not
-                $this->formatJsonToArray();
+                $this->data = formatJsonToArray($this->data);
 
                 foreach ($this->data as $value) {
                     $objects[] = new $entity('update', $value, $this->app->config());
                 }
 
                 $this->managers->getManagerOf($this->model)->update($objects);
-                $this->view = $this->managers->getManagerOf($this->model)->invalidEntities();
+                $this->view = $this->managers->getManagerOf($this->model)->response();
             } else {
                 throw new \InvalidArgumentException("empty post data, try : POST.");
             }

@@ -11,6 +11,6 @@ abstract class TestManager extends Manager
     abstract protected function add(Test $test);
     abstract protected function update(Test $test);
 
-    abstract public function get(array $searchData, $tablename);
+    abstract public function get(Test $test);
     abstract public function getList(): array;
 }

@@ -29,6 +29,16 @@ class refreshToken extends Entity
         ];
     }
 
+    //attributes for the get method in the exempleManager
+    public function  searchKeys(): array
+    {
+        return  [
+            'id',
+            'newRT',
+            'oldRT',
+            'expirationDate'
+        ];
+    }
 
     //attribute for the update method in the exempleManager , WHERE id
     public function classId()

@@ -10,16 +10,16 @@ use \Entity\User;
 class UserController extends BackController
 {
 
-    public function executeGet()
-    {
-        if ($this->httpMethod == 'GET') {
+    // public function executeGet()
+    // {
+    //     if ($this->httpMethod == 'GET') {
 
-            $actionMethod = $this->action;
-            $this->view = $this->managers->getManagerOf($this->model)->$actionMethod(($this->data)['id']);
-        } else {
-            throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
-        }
-    }
+    //         $actionMethod = $this->action;
+    //         $this->view = $this->managers->getManagerOf($this->model)->$actionMethod(($this->data)['id']);
+    //     } else {
+    //         throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
+    //     }
+    // }
 
 
     public function executeLogin()

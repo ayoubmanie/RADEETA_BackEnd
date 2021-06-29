@@ -30,6 +30,17 @@ class HistoriqueService extends Entity
         ];
     }
 
+    //attributes for the get method in the exempleManager
+    public function  searchKeys(): array
+    {
+        return  [
+            'id',
+            'testId',
+            'serviceId',
+            'date'
+        ];
+    }
+
     //attributes for the update method in the exempleManager , WHERE id1 AND id2
     public function classId()
     {

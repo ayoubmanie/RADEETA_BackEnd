@@ -18,7 +18,7 @@ class Router extends ApplicationComponent
         if (!array_key_exists(1, $requestArray)) {
 
             throw new \Exception("no model is given");
-        } elseif ($requestArray[1] == 'add' || $requestArray[1] == 'update') {
+        } elseif (in_array($requestArray[1], ['add', 'update', 'get'])) {
 
             $route['action'] = $requestArray[1];
 

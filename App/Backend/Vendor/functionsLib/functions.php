@@ -50,3 +50,13 @@ function validTime($attribute)
     if ($matches == 0) return false;
     else return true;
 }
+
+
+function formatJsonToArray($var)
+{
+    //check if data is an array or not
+    $tempTest = json_encode($var);
+    $tempTest = json_decode($tempTest);
+    if (!is_array($tempTest)) $var = [$var];
+    return $var;
+}

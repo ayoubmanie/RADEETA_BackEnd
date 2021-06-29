@@ -7,13 +7,20 @@ abstract class Entity
     protected $invalidEntity;
     protected $rawPostData;
     protected $updateAttrs = [];
+    protected $getAttrs = [];
     protected $erreurs = [];
     protected $config;
+
+
+    protected int $LIMIT = -1;
+    protected int $OFFSET = -1;
 
     use Hydrator;
 
     abstract public function addAttrs(): array;
+    abstract public function searchKeys(): array;
     abstract public function classId();
+
 
     //attributes for the updated, they are not seted by the user
     //this method is called by the entity constructor
@@ -22,6 +29,7 @@ abstract class Entity
     public function __construct($action, array $donnees = [], $config)
     {
         $this->config = $config;
+
 
         if (!empty($donnees)) {
             $this->rawPostData = $donnees;
@@ -37,9 +45,9 @@ abstract class Entity
                 if (empty($value)) throw new \InvalidArgumentException("unknown class id");
 
                 //check if there more post data than post id
-                if (empty(array_diff(array_flip($donnees), [$id]))) {
-                    // throw new \Exception("no post data found to update", 1);
-                }
+                // if (empty(array_diff(array_flip($donnees), [$id]))) {
+                //     // throw new \Exception("no post data found to update", 1);
+                // }
 
 
                 //check if there is an attribute that is not updated from the user, like the dateModif ...
@@ -65,12 +73,102 @@ abstract class Entity
 
                 //     throw new \InvalidArgumentException("post data '" . $id . "' is missing,");
                 // }
+            } elseif ($action == 'get') {
+
+
+                $attrsUsedForSearch = array_merge(["LIMIT", "OFFSET"], $this->searchKeys());
+
+                // print_r(array_keys($donnees));
+                // exit;
+
+                // print_r($donnees);
+                // exit;
+                if (!empty(array_diff(array_keys($donnees), $attrsUsedForSearch))) {
+                    $this->erreurs["invalidSearchData"] = "attributes not existing";
+                } else {
+                    $tempGetAttrs = array_intersect($this->searchKeys(), array_keys($donnees));
+
+                    unset($tempGetAttrs['LIMIT']);
+                    unset($tempGetAttrs['OFFSET']);
+
+                    if (isset($donnees["LIMIT"]))  $this->setLIMIT($donnees["LIMIT"]);
+                    if (isset($donnees["OFFSET"])) $this->setOFFSET($donnees["OFFSET"]);
+
+
+                    foreach ($tempGetAttrs as $attr) {
+
+                        //default search , no operator and one value
+                        if (!is_array($donnees[$attr])) {
+                            $config = $this->config->get();
+                            $default =  $config->Backend->ManagerPDO->search->defaultOperator;
+
+                            $newDonnees["operator"] = $default;
+                            $newDonnees["values"] = $donnees[$attr];
+                            $donnees[$attr] = [$newDonnees];
+                        }
+
+                        $donnees[$attr] = formatJsonToArray($donnees[$attr]);
+
+                        foreach ($donnees[$attr] as $k => $element) {
+
+
+                            if (!isset($element['values'])) {
+
+                                $this->erreurs[$attr][$k]['values'] = "empty";
+                            } else {
+
+                                if (!is_array($element['values'])) $element['values'] = [$element['values']];
+
+                                foreach ($element['values']  as $ke => $v) {
+
+                                    if (gettype($v) == gettype($this->$attr)) {
+                                        $this->getAttrs[$attr][$k]['values'][] = $v;
+                                    } else {
+                                        $this->erreurs[$attr][$k]['values'] = "invalid";
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!isset($element['operator'])) {
+
+                                $this->erreurs[$attr][$k]['operator'] = "empty";
+                            } else {
+
+                                $config = $this->config->get();
+                                $operators =  $config->Backend->ManagerPDO->search->operators;
+
+                                if (!in_array($element['operator'], $operators)) {
+                                    $this->erreurs[$attr][$k]['operator'] = "invalid";
+                                } else {
+                                    $this->getAttrs[$attr][$k]['operator'] = $element['operator'];
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
 
+    public function setLIMIT($LIMIT)
+    {
+        if (is_numeric($LIMIT) && $LIMIT > 0) {
+            $this->LIMIT = $LIMIT;
+        } else {
+            $this->erreurs['LIMIT'] = "invalid";
+        }
+    }
 
+    public function setOFFSET($OFFSET)
+    {
+        if (is_numeric($OFFSET) && $OFFSET >= 0) {
+            $this->OFFSET = $OFFSET;
+        } else {
+            $this->erreurs['OFFSET'] = "invalid";
+        }
+    }
 
     public function isValid()
     {
@@ -102,5 +200,20 @@ abstract class Entity
     public function invalidEntity()
     {
         return $this->invalidEntity;
+    }
+
+    public function getAttrs()
+    {
+        return $this->getAttrs;
+    }
+
+    public function rowCount()
+    {
+        return $this->rowCount;
+    }
+
+    public function offset()
+    {
+        return $this->offset;
     }
 }
