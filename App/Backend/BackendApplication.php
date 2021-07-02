@@ -13,18 +13,32 @@ class BackendApplication extends Application
         try {
             $controllers = $this->getController();
             $views = [];
-            foreach ($controllers as $model => $controller) {
-                // try {
+
+            $route = $this->router->route();
+            if ($route["action"] == "search") {
+
+                //it's only one controller
+                $controller = $controllers;
                 $controller->execute();
 
                 $this->httpResponse->setResponseCookies($controller->cookies());
-                if (!empty($controller->view())) {
-                    $views[$model] = $controller->view();
-                }
-                //to review !!!!!!
-                // } catch (\Throwable $e) {
+            } else {
 
-                // }
+
+                foreach ($controllers as $model => $controller) {
+                    // try {
+
+                    $controller->execute();
+
+                    $this->httpResponse->setResponseCookies($controller->cookies());
+                    if (!empty($controller->view())) {
+                        $views[$model] = $controller->view();
+                    }
+                    //to review !!!!!!
+                    // } catch (\Throwable $e) {
+
+                    // }
+                }
             }
             $this->httpResponse->setResponseBody($views);
 

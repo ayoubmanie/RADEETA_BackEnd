@@ -38,7 +38,7 @@ trait ManagerPDO
     {
         if (!is_array($entities)) $entities = [$entities];
 
-        $refrenceEntity = $entities[0];
+        $refrenceEntity = $this->refrenceEntity($entities);
         $tableName = $this->tableName($refrenceEntity);
         $queryColumns = '';
 
@@ -110,7 +110,7 @@ trait ManagerPDO
     {
         if (!is_array($entities)) $entities = [$entities];
 
-        $refrenceEntity = $entities[0];
+        $refrenceEntity = $this->refrenceEntity($entities);
         $tableName = $this->tableName($refrenceEntity);
         $queryColumns = '';
 
@@ -258,15 +258,24 @@ trait ManagerPDO
         return $requete;
     }
 
+
+    protected function refrenceEntity(array $entities)
+    {
+
+        $firstkey = array_key_first($entities);
+        $refrenceEntity = $entities[$firstkey];
+        return $refrenceEntity;
+    }
+
+
     public function get($entities)
     {
 
 
         if (!is_array($entities)) $entities = [$entities];
 
-        foreach ($entities as $key => $entity) {
-            $refrenceEntity = $entities[$key];
-        }
+        $refrenceEntity = $this->refrenceEntity($entities);
+
         $tableName = $this->tableName($refrenceEntity);
 
 
@@ -302,6 +311,7 @@ trait ManagerPDO
         // print_r($this->invalidEntities);
         // exit;
         $requete = implode(" UNION ", $requete);
+
 
         if ($requete != '') {
             // query
@@ -466,5 +476,256 @@ trait ManagerPDO
         //don't use array_merge , it causes reindexing
         $array = $this->invalidEntities + $this->validEntitiesResult;
         return (object)$array;
+    }
+
+    public function search($data)
+    {
+
+
+        // $path = $this->path(['service', 'temp2'], ['user', 'temp']);
+
+        // print_r($path);
+
+
+        // exit;
+        //each search will be selected and united in the query 
+
+
+        foreach ($data as $searchKey => $search) {
+            $endTables = [];
+            $startTables = [];
+            foreach ($search as $modelType => $values) {
+
+                if ($modelType == "where") {
+
+                    $orConditions = [];
+
+                    foreach ($values as $orKey => $models) {
+
+                        $andConditions = [];
+
+                        foreach ($models as $model => $entities) {
+
+                            $entityOrConditions = [];
+
+                            foreach ($entities as $entityNumber => $entity) {
+
+                                if ($entity->isValid()) {
+                                    $endTables[] = $model;
+                                    $entityOrConditions[] =  $this->querryAttrsSearch($entity->getAttrs(),  $searchKey, $model, $orKey, $entityNumber);
+                                } else {
+                                }
+                            }
+                            $andConditions[] = " ( " . implode(" OR ", $entityOrConditions) . " ) ";
+                        }
+                        $orConditions[] = " ( " . implode(" AND ", $andConditions) . " ) ";
+                    }
+
+                    $searchsConditions = implode(" OR ", $orConditions);
+                } elseif ($modelType == "select") {
+
+                    foreach ($values as $model => $entity) {
+
+
+                        if ($entity->isValid()) {
+
+                            // exit;
+                            $startTables[] = $model;
+                            if (!isset($entity->getAttrs()['columns'])) {
+                                $selects[] = "$model.*";
+                            } else {
+                                $selects[] =  $this->querryAttrsSelect($entity->getAttrs()['columns'],  $model);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
+            // $endTables = array_unique($endTables);
+            // print_r($endTables);
+            // print_r($startTables);
+            // exit;
+
+
+            // select .....
+            //table links
+            $endTables = array_unique($endTables);
+
+            $paths = $this->path($startTables, $endTables);
+
+            //make the querry 
+            $requete = [];
+            foreach ($paths as $pathKey => $path) {
+                $fromTable = $path[array_key_first($path)];
+
+                unset($path[array_key_first($path)]);
+
+                $joins = '';
+                foreach ($path as $element) {
+                    $ref = $element['ref'];
+                    $table = $element['table'];
+                    $key = $element['key'];
+                    $refKey = $element['refKey'];
+
+                    $joins .= " JOIN $ref ON $table.$key = $ref.$refKey ";
+                }
+
+                $select = $selects[$pathKey];
+
+
+                $requete[] = "SELECT $select FROM $fromTable $joins GROUP BY $fromTable.id WHERE $searchsConditions";
+            }
+            print_r($requete);
+        }
+        exit;
+    }
+    protected function querryAttrsSearch($attrs, $searchKey, $tableName, $orKey, $entityNumber)
+    {
+        $queryAttrs = '';
+        // print_r($attrs);
+        // exit;
+
+        foreach ($attrs as $key => $attr) {
+
+            foreach ($attr as $keyy => $v) {
+                $operator = $v["operator"];
+
+                foreach ($v["values"] as $k => $value) {
+                    // $queryAttrs .= " $tableName.$key $operator :$key$searchKey$orkey$keyy$k ";
+                    $queryAttrs .= " $tableName.$key $operator :$searchKey$tableName$orKey$entityNumber$key$keyy$k ";
+                    if (array_key_last($v["values"]) != $k)  $queryAttrs .= ' AND ';
+                }
+                if (array_key_last($attr) != $keyy)  $queryAttrs .= ' AND ';
+            }
+
+            if (array_key_last($attrs) != $key)  $queryAttrs .= ' AND ';
+        }
+
+
+        return "($queryAttrs)";
+    }
+
+    protected function querryAttrsSelect($attrs, $tableName)
+    {
+
+        if (empty($attrs)) return "$tableName.*";
+
+
+        $queryAttrs = '';
+
+        foreach ($attrs as $key => $attr) {
+
+            $queryAttrs .= "$tableName.$attr";
+
+            if (array_key_last($attrs) != $key)  $queryAttrs .= ' , ';
+        }
+
+
+        return $queryAttrs;
+    }
+
+
+    protected  function path(array $startTables, array $endTables)
+    {
+        $directLinksTable = '-';
+        $result = [];
+
+        foreach ($startTables as $key => $startTable) {
+
+            foreach ($endTables as $endtable) {
+
+                if ($startTable == $endtable) {
+
+                    $result[$key][] = [$startTable];
+                } else {
+
+                    if ($directLinksTable == '-') $directLinksTable  = $this->directLinksTable();
+
+                    $result[$key][] = $this->tableDirectLinks($startTable, $endtable, $directLinksTable, [$startTable], '');
+                }
+            }
+        }
+
+        foreach ($result as $key => $value) {
+            $result[$key] = array_unique(array_merge(...$value), SORT_REGULAR);
+        }
+
+
+        return $result;
+    }
+
+    protected function directLinksTable()
+    {
+        //get each table direct links
+        $db = 'radeeta';
+
+        $requete = "    SELECT t.* FROM (
+                      SELECT
+                          TABLE_NAME as 'table',
+                          COLUMN_NAME as 'column',
+                          REFERENCED_TABLE_NAME as 'ref_table',
+                          REFERENCED_COLUMN_NAME as 'ref_column'
+                      FROM
+                          information_schema.key_column_usage
+                      WHERE
+                          REFERENCED_TABLE_NAME IS NOT NULL
+                          AND REFERENCED_COLUMN_NAME IS NOT NULL
+                      UNION all
+                      SELECT
+                          REFERENCED_TABLE_NAME as 'table',
+                          REFERENCED_COLUMN_NAME as 'column',
+                          TABLE_NAME as 'ref_table',
+                          COLUMN_NAME as 'ref_column'
+                      FROM
+                          INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                      WHERE
+                          REFERENCED_TABLE_SCHEMA = :db
+                  ) as t
+                  ORDER BY
+                  t.table";
+
+
+        $requete = $this->dao->prepare($requete);
+        $requete->bindValue(":db", $db, \PDO::PARAM_STR);
+        $requete->execute();
+
+        $directLinks = [];
+        if ($results = $requete->fetchAll()) {
+            $directLinks = [];
+            foreach ($results as $element) {
+                $directLinks[$element['table']][] = $element;
+            }
+        }
+        return $directLinks;
+    }
+
+    protected function tableDirectLinks($startingTable, $endTable, $directLinks, $path, $previousTable)
+    {
+        if (!isset($directLinks[$startingTable])) {
+            return [];
+        }
+
+        $links = $directLinks[$startingTable];
+        foreach ($links as $link) {
+
+
+            $refTable =  $link['ref_table'];
+            $tempPath = $path;
+            $tempPath[] = ['table' => $startingTable, 'key' => $link['column'], 'ref' => $refTable, 'refKey' => $link['ref_column']];
+
+            if ($refTable == $endTable) {
+                return $tempPath;
+            } elseif ($previousTable != $refTable) {
+                // if ($refTable == 'user') echo 'yesss';
+                // echo ' go ';
+                $tempPath = $this->tableDirectLinks($refTable, $endTable, $directLinks, $tempPath, $startingTable);
+                if ($tempPath != []) {
+                    return $tempPath;
+                }
+            }
+        }
+        return [];
     }
 }

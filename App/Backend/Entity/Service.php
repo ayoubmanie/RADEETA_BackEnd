@@ -8,8 +8,8 @@ class Service extends Entity
 {
 
     //attributes
-    protected int $id;
-    protected string $nom;
+    protected int $id = 0;
+    protected string $nom = '';
 
     const ID_INVALIDE = 1;
     const NOM_INVALIDE = 2;

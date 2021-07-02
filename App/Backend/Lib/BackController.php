@@ -17,19 +17,27 @@ class BackController extends ApplicationComponent
     {
 
         parent::__construct($app);
-
         $this->model = $model;
         $this->action = $action;
         $this->httpMethod = $app->httpRequest()->method();
 
         // Solution for the get methods with one data block (one table)
         // not many tables
-        $temp = $app->httpRequest()->allPostdata();
-        if (is_array($temp) && array_key_exists($this->model, $temp)) {
-            $this->data = $temp[$this->model];
+        $tempData = $app->httpRequest()->allPostdata();
+
+        if ($action == "search") {
+            if (!is_array($tempData)) $tempData = [$tempData];
+
+            $this->data = $tempData;
         } else {
-            //to review !!!!
-            $this->data = $app->httpRequest()->allPostdata();
+
+
+            if (is_array($tempData) && array_key_exists($this->model, $tempData)) {
+                $this->data = $tempData[$this->model];
+            } else {
+                //to review !!!!
+                $this->data = $app->httpRequest()->allPostdata();
+            }
         }
 
         $this->managers = new Managers('PDO', PDOFactory::getMysqlConnexion());
@@ -53,6 +61,78 @@ class BackController extends ApplicationComponent
             $entity = '\\Entity\\' . $this->model;
 
             if (!empty($this->data)) {
+
+                //check if data is an array or not
+                // $this->data = formatJsonToArray($this->data);
+
+                foreach ($this->data as $entitynumber => $value) {
+
+                    $objects[$entitynumber] = new $entity('get', $value, $this->app->config());
+                }
+
+
+                $this->managers->getManagerOf($this->model)->get($objects);
+
+
+                // exit('test');
+                $this->view = $this->managers->getManagerOf($this->model)->response();
+
+                // print_r($this->view);
+                // exit;
+            } else {
+                throw new \InvalidArgumentException("empty post data, try : GET.");
+            }
+        } else {
+            throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
+        }
+    }
+
+    public function executeSearch()
+    {
+        if ($this->httpMethod == 'GET') {
+
+
+            if (!empty($this->data)) {
+
+                foreach ($this->data as $searchKey => $search) {
+
+                    foreach ($search as $modelType => $values) {
+
+                        if ($modelType == 'where') {
+
+                            foreach ($values as $orKey => $models) {
+
+                                foreach ($models as $model => $entities) {
+
+                                    foreach ($entities as $entitynumber => $value) {
+
+
+                                        $entity = '\\Entity\\' . $model;
+
+                                        $objects[$searchKey][$modelType][$orKey][$model][$entitynumber] =  new $entity('search', $value, $this->app->config(), $modelType);
+                                    }
+                                }
+                            }
+                        } elseif ($modelType == 'select') {
+                            foreach ($values as $model => $columns) {
+                                $entity = '\\Entity\\' . $model;
+                                $objects[$searchKey][$modelType][$model] =  new $entity('search', $columns, $this->app->config(), $modelType);
+                            }
+                        }
+                    }
+                }
+
+
+
+
+
+                $this->managers->getManagerOf($this->model)->search($objects);
+                $this->view = $this->managers->getManagerOf($this->model)->response();
+
+
+
+                //------------------------------------------------------------//
+
 
                 //check if data is an array or not
                 // $this->data = formatJsonToArray($this->data);

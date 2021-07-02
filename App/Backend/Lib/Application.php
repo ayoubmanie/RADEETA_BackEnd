@@ -27,24 +27,38 @@ abstract class Application
     {
         //routing
         $route = $this->router->route();
-        $model = $route['model'];
-        if (!is_array($model)) $model = [$model];
-        $action = $route['action'];
-
 
         //authentication
         // $this->authentication = new Authentication($this, $model, $action);
         // $this->authentication->needsPermission();
 
 
-        // On instancie le contrôleur.
-        foreach ($model as $element) {
-            $controllerClass = "\\Controller\\" . $element . 'Controller';
-            $controllers[$element] = new $controllerClass($this, $element, $action);
+        if ($route['action'] == "search") {
+
+
+            $controllerClass = "\\Lib\BackController";
+
+
+            $controller = new $controllerClass($this, "Global", $route['action']);
+
+            return $controller;
+        } else {
+            $model = $route['model'];
+            if (!is_array($model)) $model = [$model];
+            $action = $route['action'];
+
+
+
+
+            // On instancie le contrôleur.
+            foreach ($model as $element) {
+                $controllerClass = "\\Controller\\" . $element . 'Controller';
+                $controllers[$element] = new $controllerClass($this, $element, $action);
+            }
+            return $controllers;
         }
 
 
-        return $controllers;
         // try {
         //     return new $controllerClass($route["module"], $route["action"]);
         // } catch (\Throwable $e) {

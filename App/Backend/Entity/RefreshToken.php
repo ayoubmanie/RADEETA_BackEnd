@@ -7,10 +7,10 @@ use Throwable;
 
 class refreshToken extends Entity
 {
-    protected int $id;
-    protected string $newRT;
-    protected string $oldRT;
-    protected string $expirationDate;
+    protected int $id = 0;
+    protected string $newRT = '';
+    protected string $oldRT = '';
+    protected string $expirationDate = '';
 
     const ID_INVALIDE = 1;
     const NEWRT_INVALIDE = 2;

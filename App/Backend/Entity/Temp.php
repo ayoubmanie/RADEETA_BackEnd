@@ -3,30 +3,28 @@
 namespace Entity;
 
 use \Lib\Entity;
+use Throwable;
 
-class HistoriqueService extends Entity
+class Temp extends Entity
 {
-
-    //attributes
     protected int $id = 0;
     protected int $testId = 0;
-    protected int $serviceId = 0;
-    protected string $date = '';
+    protected string $tempNom = '';
+
 
     const ID_INVALIDE = 1;
     const TESTID_INVALIDE = 2;
-    const SERVICEID_INVALIDE = 3;
-    const DATE_INVALIDE = 4;
+    const TEMPNOM_INVALIDE = 3;
 
 
     //manager needs
+
     //attributes for the add method in the exempleManager
     public function  addAttrs(): array
     {
         return  [
             'testId',
-            'serviceId',
-            'date'
+            'tempNom'
         ];
     }
 
@@ -36,12 +34,12 @@ class HistoriqueService extends Entity
         return  [
             'id',
             'testId',
-            'serviceId',
-            'date'
+            'tempNom'
         ];
     }
 
-    //attributes for the update method in the exempleManager , WHERE id1 AND id2
+
+    //attribute for the update method in the exempleManager , WHERE id
     public function classId()
     {
         return 'id';
@@ -62,38 +60,31 @@ class HistoriqueService extends Entity
         if (is_numeric($id) && !empty($id)) {
             $this->id = $id;
         } else {
-            $this->erreurs['id'] = self::ID_INVALIDE;
+            // $this->erreurs[] = self::ID_INVALIDE;
+            $this->erreurs[] = "invalid";
         }
     }
 
-    public function setTestId($testId, $type = "newIds")
+    public function setTestId($testId)
     {
         if (is_numeric($testId) && !empty($testId)) {
-
             $this->testId = $testId;
         } else {
-            $this->erreurs[] = self::TESTID_INVALIDE;
+            // $this->erreurs['testId'] = self::TESTID_INVALIDE;
+            $this->erreurs['testId'] = "invalid";
         }
     }
 
-    public function setServiceId($serviceId, $type = "new")
+    public function setTempNom($tempNom)
     {
-        if (is_numeric($serviceId) && !empty($serviceId)) {
-            $this->serviceId = $serviceId;
+        //add password constraints
+        if (is_string($tempNom) && !empty($tempNom)) {
+            $this->tempNom = $tempNom;
         } else {
-            $this->erreurs[] = self::SERVICEID_INVALIDE;
+            // $this->erreurs['tempNom'] = self::PASSWORD_INVALIDE;
+            $this->erreurs['tempNom'] = "invalid";
         }
     }
-
-    public function setDate($date)
-    {
-        if (validDate($date)) {
-            $this->date = $date;
-        } else {
-            $this->erreurs[] = self::DATE_INVALIDE;
-        }
-    }
-
 
     //getters
     public function id()
@@ -106,13 +97,8 @@ class HistoriqueService extends Entity
         return $this->testId;
     }
 
-    public function serviceId()
+    public function tempNom()
     {
-        return $this->serviceId;
-    }
-
-    public function date()
-    {
-        return $this->date;
+        return $this->tempNom;
     }
 }

@@ -5,7 +5,19 @@ namespace Lib;
 class Router extends ApplicationComponent
 {
 
-    public  function route()
+
+    protected $route = null;
+
+    public function route()
+    {
+        if ($this->route == null) {
+            $this->route = $this->getRoute();
+        }
+
+        return $this->route;
+    }
+
+    protected  function getRoute()
     {
         $requestURI = $this->app->httpRequest()->requestURI();
         $requestArray = explode('?', $requestURI);
@@ -20,26 +32,30 @@ class Router extends ApplicationComponent
             throw new \Exception("no model is given");
         } elseif (in_array($requestArray[1], ['add', 'update', 'get'])) {
 
-            $route['action'] = $requestArray[1];
+            $this->route['action'] = $requestArray[1];
 
             $data = $this->app->httpRequest()->allPostdata();
 
             if (empty($data)) throw new \Exception("no model is given for the '$requestArray[1]' action");
 
             foreach ($data as $key => $value) {
-                $route['model'][] = $key;
+                $this->route['model'][] = $key;
             }
+        } elseif ($requestArray[1] == "search") {
+
+
+            $this->route['action'] = $requestArray[1];
         } else {
-            $route['model'] = $requestArray[1];
+            $this->route['model'] = $requestArray[1];
             if (!array_key_exists(2, $requestArray)) {
                 throw new \Exception("no action is given");
             } else {
-                $route['action'] = $requestArray[2];
+                $this->route['action'] = $requestArray[2];
             }
         }
 
 
 
-        return $route;
+        return $this->route;
     }
 }

@@ -10,7 +10,7 @@ abstract class Entity
     protected $getAttrs = [];
     protected $erreurs = [];
     protected $config;
-
+    protected $searchType;
 
     protected int $LIMIT = -1;
     protected int $OFFSET = -1;
@@ -26,13 +26,17 @@ abstract class Entity
     //this method is called by the entity constructor
     abstract public function autoUpdateAttrs(): array;
 
-    public function __construct($action, array $donnees = [], $config)
+    public function __construct($action, array $donnees = [], $config, $searchType = '')
     {
         $this->config = $config;
 
 
         if (!empty($donnees)) {
+
+            $this->searchType = $searchType;
+
             $this->rawPostData = $donnees;
+
             if ($action == 'add') {
                 $this->hydrate(array_flip($this->addAttrs()), $donnees, $action);
             } elseif ($action == 'update') {
@@ -81,8 +85,8 @@ abstract class Entity
                 // print_r(array_keys($donnees));
                 // exit;
 
-                // print_r($donnees);
-                // exit;
+
+
                 if (!empty(array_diff(array_keys($donnees), $attrsUsedForSearch))) {
                     $this->erreurs["invalidSearchData"] = "attributes not existing";
                 } else {
@@ -144,6 +148,94 @@ abstract class Entity
                                     $this->getAttrs[$attr][$k]['operator'] = $element['operator'];
                                 }
                             }
+                        }
+                    }
+                }
+            } elseif ($action == "search") {
+
+                if ($this->searchType == 'where') {
+
+                    $attrsUsedForSearch = $this->searchKeys();
+
+                    // print_r(array_keys($donnees));
+                    // exit;
+
+
+
+                    if (!empty(array_diff(array_keys($donnees), $attrsUsedForSearch))) {
+
+                        $this->erreurs["invalidSearchData"] = "attributes not existing";
+                    } else {
+
+                        $tempGetAttrs = array_intersect($this->searchKeys(), array_keys($donnees));
+
+                        foreach ($tempGetAttrs as $attr) {
+
+                            //default search , no operator and one value
+                            if (!is_array($donnees[$attr])) {
+                                $config = $this->config->get();
+                                $default =  $config->Backend->ManagerPDO->search->defaultOperator;
+
+                                $newDonnees["operator"] = $default;
+                                $newDonnees["values"] = $donnees[$attr];
+                                $donnees[$attr] = [$newDonnees];
+                            }
+
+                            $donnees[$attr] = formatJsonToArray($donnees[$attr]);
+
+                            foreach ($donnees[$attr] as $k => $element) {
+
+
+                                if (!isset($element['values'])) {
+
+                                    $this->erreurs[$attr][$k]['values'] = "empty";
+                                } else {
+
+                                    if (!is_array($element['values'])) $element['values'] = [$element['values']];
+
+                                    foreach ($element['values']  as $ke => $v) {
+
+                                        if (gettype($v) == gettype($this->$attr)) {
+                                            $this->getAttrs[$attr][$k]['values'][] = $v;
+                                        } else {
+                                            $this->erreurs[$attr][$k]['values'] = "invalid";
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (!isset($element['operator'])) {
+
+                                    $this->erreurs[$attr][$k]['operator'] = "empty";
+                                } else {
+
+                                    $config = $this->config->get();
+                                    $operators =  $config->Backend->ManagerPDO->search->operators;
+
+                                    if (!in_array($element['operator'], $operators)) {
+                                        $this->erreurs[$attr][$k]['operator'] = "invalid";
+                                    } else {
+                                        $this->getAttrs[$attr][$k]['operator'] = $element['operator'];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } elseif ($this->searchType == 'select') {
+
+
+                    if (isset($donnees["LIMIT"]))  $this->setLIMIT($donnees["LIMIT"]);
+                    if (isset($donnees["OFFSET"])) $this->setOFFSET($donnees["OFFSET"]);
+
+
+                    $attrsUsedForSearch = $this->searchKeys();
+
+
+                    if (isset($donnees['columns'])) {
+                        if (!empty(array_diff($donnees['columns'], $attrsUsedForSearch))) {
+                            $this->erreurs["invalidSearchData"] = "attributes not existing";
+                        } else {
+                            $this->getAttrs['columns'] = $donnees['columns'];
                         }
                     }
                 }
