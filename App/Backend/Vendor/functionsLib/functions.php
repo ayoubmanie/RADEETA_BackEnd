@@ -60,3 +60,10 @@ function formatJsonToArray($var)
     if (!is_array($tempTest)) $var = [$var];
     return $var;
 }
+
+function jsonIsArray($var)
+{    //check if data is an array or not
+    $tempTest = json_encode($var);
+    $tempTest = json_decode($tempTest);
+    return is_array($tempTest) ? true : false;
+}

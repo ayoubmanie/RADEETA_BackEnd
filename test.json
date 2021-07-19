@@ -1,0 +1,73 @@
+{
+  "search1": {
+    "select": {
+      "table1": ["column1", "column3"],
+      "table2": []
+    },
+    "where": [
+      [
+        {
+          "table": "table1",
+          "column": "column1",
+          "operator": "=",
+          "value": "value1"
+        },
+        "or",
+        {
+          "table": "table2",
+          "column": "column1",
+          "operator": "=",
+          "value": "value1"
+        },
+        "and",
+        {
+          "table": "table3",
+          "column": "column2",
+          "operator": ">",
+          "value": "value2"
+        },
+        "and",
+        {
+          "table": "table4",
+          "column": "column1",
+          "operator": "=",
+          "value": "value1"
+        }
+      ],
+      "or",
+      [
+        {
+          "table": "table5",
+          "column": "column1",
+          "operator": "=",
+          "value": "value1"
+        },
+        "and",
+        [
+          {
+            "table": "table6",
+            "column": "column1",
+            "operator": "=",
+            "value": "value1"
+          },
+          "or",
+          {
+            "table": "table7",
+            "column": "column1",
+            "operator": "=",
+            "value": "value1"
+          }
+        ]
+      ],
+      "and",
+      [
+        {
+          "table": "table8",
+          "column": "column1",
+          "operator": "=",
+          "value": "value1"
+        }
+      ]
+    ]
+  }
+}

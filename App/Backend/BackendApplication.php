@@ -22,6 +22,9 @@ class BackendApplication extends Application
                 $controller->execute();
 
                 $this->httpResponse->setResponseCookies($controller->cookies());
+                if (!empty($controller->view())) {
+                    $views = $controller->view();
+                }
             } else {
 
 
@@ -40,6 +43,7 @@ class BackendApplication extends Application
                     // }
                 }
             }
+
             $this->httpResponse->setResponseBody($views);
 
 

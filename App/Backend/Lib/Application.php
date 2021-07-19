@@ -35,7 +35,6 @@ abstract class Application
 
         if ($route['action'] == "search") {
 
-
             $controllerClass = "\\Lib\BackController";
 
 

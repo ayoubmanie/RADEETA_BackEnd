@@ -46,7 +46,7 @@ class Authentication extends ApplicationComponent
         if ($type == 'refresh') {
             $payload["exp"] = $payloadExp;
         } else {
-            $refreshExp = $iat + 60 * 60 * 24 * 30 * 6;
+            // $refreshExp = $iat + 60 * 60 * 24 * 30 * 6;
             $payload["exp"] = getenv('REFRESH_TOKEN_TIME');
             $payload["nbf"] = $accessExp - getenv('REFRESH_TOKEN_TIME_BEFORE_REFRESH');
         }

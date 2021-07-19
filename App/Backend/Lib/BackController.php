@@ -92,6 +92,8 @@ class BackController extends ApplicationComponent
         if ($this->httpMethod == 'GET') {
 
 
+
+
             if (!empty($this->data)) {
 
                 foreach ($this->data as $searchKey => $search) {
@@ -100,21 +102,25 @@ class BackController extends ApplicationComponent
 
                         if ($modelType == 'where') {
 
-                            foreach ($values as $orKey => $models) {
-
-                                foreach ($models as $model => $entities) {
-
-                                    foreach ($entities as $entitynumber => $value) {
+                            global $index;
+                            global $logicOperator;
+                            global $entities;
 
 
-                                        $entity = '\\Entity\\' . $model;
+                            $index = 1;
+                            $logicOperator = [];
+                            $entities = [];
+                            $dataTree = $this->extract_data_temp($values);
 
-                                        $objects[$searchKey][$modelType][$orKey][$model][$entitynumber] =  new $entity('search', $value, $this->app->config(), $modelType);
-                                    }
-                                }
+
+                            foreach ($entities as $model => $modelValues) {
+
+                                $entity = '\\Entity\\' . $model;
+                                $objects[$searchKey][$modelType][$model] =  new $entity('search', $modelValues, $this->app->config(), $modelType);
                             }
                         } elseif ($modelType == 'select') {
                             foreach ($values as $model => $columns) {
+
                                 $entity = '\\Entity\\' . $model;
                                 $objects[$searchKey][$modelType][$model] =  new $entity('search', $columns, $this->app->config(), $modelType);
                             }
@@ -126,37 +132,53 @@ class BackController extends ApplicationComponent
 
 
 
-                $this->managers->getManagerOf($this->model)->search($objects);
+                $this->managers->getManagerOf($this->model)->search(["dataTree" => $dataTree, "logicOperator" => $logicOperator, "objects" => $objects]);
                 $this->view = $this->managers->getManagerOf($this->model)->response();
-
-
-
-                //------------------------------------------------------------//
-
-
-                //check if data is an array or not
-                // $this->data = formatJsonToArray($this->data);
-
-
-                foreach ($this->data as $entitynumber => $value) {
-                    $objects[$entitynumber] = new $entity('get', $value, $this->app->config());
-                }
-
-
-                $this->managers->getManagerOf($this->model)->get($objects);
-
-
-                // exit('test');
-                $this->view = $this->managers->getManagerOf($this->model)->response();
-
-                // print_r($this->view);
-                // exit;
             } else {
                 throw new \InvalidArgumentException("empty post data, try : GET.");
             }
         } else {
             throw new \InvalidArgumentException("wrong httpMethod, try : GET.");
         }
+    }
+
+    protected function extract_data_temp($data, $dataTree = [])
+    {
+
+        // print_r($dataTree);
+        global $index;
+        global $logicOperator;
+        global $entities;
+
+        foreach ($data as $key => $value) {
+
+
+            if (in_array($value, ["and", "or"])) {
+
+                $dataTree[$key] = $index;
+                $logicOperator[$index] = $value;
+                // echo "$index ";
+            } elseif (is_array($value)) {
+
+                if (jsonIsArray($value)) { // $value is an array
+
+                    // recall
+
+                    $dataTree[$key] = $this->extract_data_temp($value, []);
+                } else { //$value is an object
+
+                    $dataTree[$key] = $index;
+                    $value["index"] = $index;
+
+                    // $value["table"] = ucfirst($value["table"]);
+
+                    $table = $value["table"];
+                    $entities[$table][] = $value;
+                }
+            }
+            $index++;
+        }
+        return $dataTree;
     }
 
     public function executeGetList()

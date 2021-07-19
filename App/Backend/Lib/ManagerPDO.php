@@ -9,30 +9,7 @@ trait ManagerPDO
 
     protected $invalidEntities = [];
     protected $validEntitiesResult = [];
-    // public function update(Entity $entity)
-    // {
 
-    //     if ($entity->isValid()) {
-    //         $tableName = $this->tableName($entity);
-
-    //         $ids  = $entity->classIds();
-
-    //         $attrs = array_diff($entity->updateAttrs(), $ids);
-    //         $queryUpdateAttrs = $this->querryAttrs($attrs);
-
-    //         $queryIds = "";
-    //         foreach ($ids as $key => $value) {
-    //             $queryIds .= " $value = :$value";
-    //             if (array_key_last($ids) != $key)  $queryIds .= ' AND ';
-    //         }
-
-    //         $requete = "UPDATE $tableName SET $queryUpdateAttrs WHERE $queryIds";
-
-    //         $requete = $this->dao->prepare($requete);
-    //         $requete = $this->bindAllAttrs($requete, $entity, $entity->updateAttrs());
-    //         $requete->execute();
-    //     }
-    // }
 
     public function update($entities)
     {
@@ -198,22 +175,6 @@ trait ManagerPDO
         return "($queryAttrs)";
     }
 
-    // protected function querryAttrsGet($attrs, $neededkey)
-    // {
-    //     $queryAttrs = '';
-    //     $queryEntityKey = '';
-
-    //     foreach ($attrs as $key => $attr) {
-    //         $queryAttrs .= "$attr = :$attr$neededkey";
-    //         if (array_key_last($attrs) != $key)  $queryAttrs .= ' AND ';
-    //     }
-    //     return [
-    //         "queryWHERE" => "($queryAttrs)",
-    //         "queryCASE" => " WHEN ($queryAttrs) THEN $neededkey "
-    //     ];
-    // }
-
-
     protected function bindAllAttrs($requete, $entity, $attrs, $key = '')
     {
 
@@ -228,7 +189,6 @@ trait ManagerPDO
             } else {
                 throw new \InvalidArgumentException("attribute type not specified in the class : '" . get_class($this->entity)) . "'";
             }
-            // echo $attr . $key . ' : ' . $entity->$attr() . '__';
         }
         return $requete;
     }
@@ -352,121 +312,6 @@ trait ManagerPDO
             }
         }
     }
-    // public function get($entities)
-    // {
-
-    //     if (!is_array($entities)) $entities = [$entities];
-
-    //     $refrenceEntity = $entities[0];
-    //     $tableName = $this->tableName($refrenceEntity);
-    //     $queryConsitions = '';
-
-
-    //     // $queryAddAttrs
-    //     $queryConditions = '';
-    //     $queryEntityKey = '';
-    //     $finalEntities = [];
-
-    //     // $allGetattrs = [];
-    //     foreach ($entities as $key => $entity) {
-
-    //         // print_r($entity);
-    //         // continue;
-    //         if ($entity->isValid()) {
-    //             $temp = $this->querryAttrsGet($entity->getAttrs(), $key);
-    //             $queryConditions .= $temp["queryWHERE"];
-    //             $queryEntityKey .=  $temp["queryCASE"];
-
-    //             // foreach ($entity->getAttrs() as $attr) {
-    //             //     $allGetattrs[$attr] = null;
-    //             // }
-    //             if (array_key_last($entities) != $key)  $queryConditions .= ' OR ';
-    //             $finalEntities[$key] = $entity;
-    //         } else {
-    //             $this->invalidEntities[$key] = $entity->invalidEntity();
-    //         }
-    //     }
-
-    //     // print_r($this->invalidEntities);
-    //     // exit;
-    //     if ($queryConditions != '') {
-    //         // query
-    //         $requete = "SELECT *, CASE $queryEntityKey END AS entity FROM $tableName WHERE $queryConditions";
-
-    //         // exit;
-    //         // echo $requete;
-    //         // exit;
-    //         $this->dao->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
-
-    //         // prepare
-    //         $requete = $this->dao->prepare($requete);
-
-    //         // bind 
-
-    //         foreach ($finalEntities as $key => $entity) {
-    //             $requete = $this->bindAllAttrs($requete, $entity, $entity->getAttrs(), $key);
-    //         }
-
-    //         // execute
-    //         $requete->execute();
-
-    //         if ($result = $requete->fetchAll()) {
-    //             //                 // echo "$key - ";
-    //             foreach ($result as $row) {
-    //                 $column = $row["entity"];
-    //                 unset($row["entity"]);
-    //                 $this->validEntitiesResult[$column][] = $row;
-    //             }
-    //         }
-    //     }
-    // }
-
-    // public function get($entities)
-    // {
-
-    //     if (!is_array($entities)) $entities = [$entities];
-
-    //     $refrenceEntity = $entities[0];
-    //     $tableName = $this->tableName($refrenceEntity);
-    //     $queryColumns = '';
-
-    //     foreach ($entities as $key => $entity) {
-    //         if ($entity->isValid()) {
-
-
-    //             $whereAttrs = '';
-
-
-    //             foreach ($entity->getAttrs() as $keyy => $attr) {
-
-    //                 $whereAttrs .= "$attr = :$attr$key";
-    //                 if (array_key_last($entity->getAttrs()) != $keyy)  $whereAttrs .= ' AND ';
-    //             }
-
-    //             // $rowCount = $entity->rowCount();
-    //             // $offset = $entity->offset();
-
-
-    //             // $requete  = "SELECT * FROM $tableName WHERE $whereAttrs LIMIT $rowCount OFFSET $offset";
-    //             $requete  = "SELECT * FROM $tableName WHERE $whereAttrs ";
-
-    //             $requete = $this->dao->prepare($requete);
-
-    //             // the $key here could be set to null
-    //             $requete = $this->bindAllAttrs($requete, $entity, $entity->getAttrs());
-
-    //             $requete->execute();
-
-    //             if ($result = $requete->fetchAll()) {
-    //                 // echo "$key - ";
-
-    //                 $this->validEntitiesResult[$key] = $result;
-    //             }
-    //         } else {
-    //             $this->invalidEntities[$key] = $entity->invalidEntity();
-    //         }
-    //     }
-    // }
 
 
     public function response()
@@ -475,136 +320,159 @@ trait ManagerPDO
 
         //don't use array_merge , it causes reindexing
         $array = $this->invalidEntities + $this->validEntitiesResult;
+
+
         return (object)$array;
     }
 
-    public function search($data)
+    public function search(array $data)
     {
 
 
-        // $path = $this->path(['service', 'temp2'], ['user', 'temp']);
-
-        // print_r($path);
-
-
-        // exit;
         //each search will be selected and united in the query 
+        $results = [];
 
+        //check if there is at least one invali
+        $validSearch = true;
+        foreach ($data["objects"] as $searchKey => $search) {
 
-        foreach ($data as $searchKey => $search) {
-            $endTables = [];
-            $startTables = [];
-            foreach ($search as $modelType => $values) {
+            foreach ($data["objects"] as $searchKey => $search) {
 
-                if ($modelType == "where") {
+                foreach ($search["where"] as $object) {
 
-                    $orConditions = [];
-
-                    foreach ($values as $orKey => $models) {
-
-                        $andConditions = [];
-
-                        foreach ($models as $model => $entities) {
-
-                            $entityOrConditions = [];
-
-                            foreach ($entities as $entityNumber => $entity) {
-
-                                if ($entity->isValid()) {
-                                    $endTables[] = $model;
-                                    $entityOrConditions[] =  $this->querryAttrsSearch($entity->getAttrs(),  $searchKey, $model, $orKey, $entityNumber);
-                                } else {
-                                }
-                            }
-                            $andConditions[] = " ( " . implode(" OR ", $entityOrConditions) . " ) ";
-                        }
-                        $orConditions[] = " ( " . implode(" AND ", $andConditions) . " ) ";
-                    }
-
-                    $searchsConditions = implode(" OR ", $orConditions);
-                } elseif ($modelType == "select") {
-
-                    foreach ($values as $model => $entity) {
-
-
-                        if ($entity->isValid()) {
-
-                            // exit;
-                            $startTables[] = $model;
-                            if (!isset($entity->getAttrs()['columns'])) {
-                                $selects[] = "$model.*";
-                            } else {
-                                $selects[] =  $this->querryAttrsSelect($entity->getAttrs()['columns'],  $model);
-                            }
-                        }
-                    }
+                    if (!$object->isValid()) $validSearch = false;
                 }
             }
 
+            if ($validSearch) {
+                $conditions = [];
+                foreach ($data["objects"] as $searchKey => $search) {
 
+                    $endTables = [];
 
-            // $endTables = array_unique($endTables);
-            // print_r($endTables);
-            // print_r($startTables);
-            // exit;
+                    foreach ($search["where"] as $object) {
 
+                        $model = strtolower($this->tableName($object));
+                        $endTables[] = $model;
 
-            // select .....
-            //table links
-            $endTables = array_unique($endTables);
+                        $conditions =  $conditions  + $object->getAttrs();
+                    }
 
-            $paths = $this->path($startTables, $endTables);
+                    $startTables = [];
+                    foreach ($search["select"] as $object) {
 
-            //make the querry 
-            $requete = [];
-            foreach ($paths as $pathKey => $path) {
-                $fromTable = $path[array_key_first($path)];
+                        $model = strtolower($this->tableName($object));
+                        $startTables[] = $model;
 
-                unset($path[array_key_first($path)]);
-
-                $joins = '';
-                foreach ($path as $element) {
-                    $ref = $element['ref'];
-                    $table = $element['table'];
-                    $key = $element['key'];
-                    $refKey = $element['refKey'];
-
-                    $joins .= " JOIN $ref ON $table.$key = $ref.$refKey ";
+                        $selects[] =  $this->querryAttrsSelect($object->getAttrs(),  $model);
+                    }
                 }
 
-                $select = $selects[$pathKey];
+                $conditions =  $conditions  + $data["logicOperator"];
+
+                $requestCondition = $this->linkDataTree($conditions, $data["dataTree"]);
 
 
-                $requete[] = "SELECT $select FROM $fromTable $joins GROUP BY $fromTable.id WHERE $searchsConditions";
+                // select .....
+                //table links
+                $endTables = array_unique($endTables); // not nessecary 
+
+                $paths = $this->path($startTables, $endTables);
+
+
+                //make the querry 
+                $requetes = [];
+
+
+                foreach ($paths as $pathKey => $path) {
+                    $fromTable = $path[array_key_first($path)];
+
+                    unset($path[array_key_first($path)]);
+
+                    $joins = '';
+                    foreach ($path as $element) {
+                        $ref = $element['ref'];
+                        $table = $element['table'];
+                        $key = $element['key'];
+                        $refKey = $element['refKey'];
+
+                        $joins .= " JOIN $ref ON $table.$key = $ref.$refKey ";
+                    }
+
+                    $select = $selects[$pathKey];
+
+
+                    $requetes[$fromTable] = "SELECT $select FROM $fromTable $joins WHERE $requestCondition GROUP BY $fromTable.id ";
+                }
+
+                foreach ($requetes as $selectKey => $requete) {
+
+                    $requete = $this->dao->prepare($requete);
+
+                    $requete = $this->bindsearchAttrs($requete, $conditions);
+
+                    $requete->execute();
+
+                    if ($result = $requete->fetchAll()) {
+
+                        $results[$searchKey][$selectKey] = $result;
+                        $this->validEntitiesResult[$searchKey][$selectKey] = $result;
+                    }
+                }
+            } else {
+                // send back the error in the dataTree with the specific index
             }
-            print_r($requete);
         }
-        exit;
     }
-    protected function querryAttrsSearch($attrs, $searchKey, $tableName, $orKey, $entityNumber)
+
+    protected function linkDataTree($data, $dataTree, $request = '')
     {
-        $queryAttrs = '';
-        // print_r($attrs);
-        // exit;
+        $request .= " ( ";
+        foreach ($dataTree as $index) {
 
-        foreach ($attrs as $key => $attr) {
+            if (!is_array($index)) {
 
-            foreach ($attr as $keyy => $v) {
-                $operator = $v["operator"];
 
-                foreach ($v["values"] as $k => $value) {
-                    // $queryAttrs .= " $tableName.$key $operator :$key$searchKey$orkey$keyy$k ";
-                    $queryAttrs .= " $tableName.$key $operator :$searchKey$tableName$orKey$entityNumber$key$keyy$k ";
-                    if (array_key_last($v["values"]) != $k)  $queryAttrs .= ' AND ';
+                $element = $data[$index];
+
+                if (in_array($element, ["and", "or"])) {
+                    $request .= " $element ";
+                } else {
+                    $table = $element["table"];
+                    $column = $element["column"];
+                    $operator = $element["operator"];
+                    $request .= " `$table`.$column $operator :$index ";
                 }
-                if (array_key_last($attr) != $keyy)  $queryAttrs .= ' AND ';
-            }
+            } else {
 
-            if (array_key_last($attrs) != $key)  $queryAttrs .= ' AND ';
+                $request .= $this->linkDataTree($data, $index);
+            }
+        }
+        $request .= " ) ";
+        return $request;
+    }
+
+    protected function bindsearchAttrs($requete, $conditions)
+    {
+        foreach ($conditions as $index => $element) {
+
+            if (isset($element["type"])) {
+                $type = $element["type"];
+
+
+                if ($type == 'integer') {
+
+                    $requete->bindValue(":$index", $element["value"], \PDO::PARAM_INT);
+                } elseif ($type == 'string') {
+
+                    $requete->bindValue(":$index", $element["value"], \PDO::PARAM_STR);
+                } else {
+                    throw new \InvalidArgumentException("attribute type not specified in the class : '" . $element["table"] . "'");
+                }
+            }
         }
 
-
-        return "($queryAttrs)";
+        return $requete;
     }
 
     protected function querryAttrsSelect($attrs, $tableName)
@@ -612,16 +480,12 @@ trait ManagerPDO
 
         if (empty($attrs)) return "$tableName.*";
 
-
         $queryAttrs = '';
-
         foreach ($attrs as $key => $attr) {
 
             $queryAttrs .= "$tableName.$attr";
-
             if (array_key_last($attrs) != $key)  $queryAttrs .= ' , ';
         }
-
 
         return $queryAttrs;
     }
@@ -703,10 +567,13 @@ trait ManagerPDO
 
     protected function tableDirectLinks($startingTable, $endTable, $directLinks, $path, $previousTable)
     {
+
+
         if (!isset($directLinks[$startingTable])) {
+
             return [];
         }
-
+        // exit;
         $links = $directLinks[$startingTable];
         foreach ($links as $link) {
 
@@ -718,8 +585,7 @@ trait ManagerPDO
             if ($refTable == $endTable) {
                 return $tempPath;
             } elseif ($previousTable != $refTable) {
-                // if ($refTable == 'user') echo 'yesss';
-                // echo ' go ';
+
                 $tempPath = $this->tableDirectLinks($refTable, $endTable, $directLinks, $tempPath, $startingTable);
                 if ($tempPath != []) {
                     return $tempPath;
