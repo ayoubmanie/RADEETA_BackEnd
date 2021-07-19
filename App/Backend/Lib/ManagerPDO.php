@@ -334,13 +334,18 @@ trait ManagerPDO
 
         //check if there is at least one invali
         $validSearch = true;
+        $error = [];
         foreach ($data["objects"] as $searchKey => $search) {
 
             foreach ($data["objects"] as $searchKey => $search) {
 
                 foreach ($search["where"] as $object) {
 
-                    if (!$object->isValid()) $validSearch = false;
+                    if (!$object->isValid()) {
+
+                        $error = $error + $object->invalidEntity()['errorMessage'];
+                        $validSearch = false;
+                    }
                 }
             }
 
@@ -421,8 +426,29 @@ trait ManagerPDO
                 }
             } else {
                 // send back the error in the dataTree with the specific index
+
+                $this->invalidEntities[$searchKey] = $this->formDataError($error, $data["dataTree"]);
             }
         }
+    }
+
+    protected function formDataError($data, $dataTree)
+    {
+
+        foreach ($dataTree as $key => $index) {
+
+
+            if (!is_array($index)) {
+                if (array_key_exists($index, $data)) {
+                    $dataTree[$key] = $data[$index];
+                }
+            } else {
+
+                $dataTree[$key] = $this->formDataError($data, $index);
+            }
+        }
+
+        return $dataTree;
     }
 
     protected function linkDataTree($data, $dataTree, $request = '')

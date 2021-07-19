@@ -187,7 +187,7 @@ abstract class Entity
 
                         if ($type != gettype($this->$attr)) {
 
-                            $this->erreurs[$index]["value"] = "invalid";
+                            $this->erreurs[$index][$element["column"]] = "invalid";
                         }
 
 
